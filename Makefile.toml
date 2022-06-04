@@ -1,0 +1,32 @@
+[tasks.dev-ui]
+command = "elm"
+args = ["make", "ui/Main.elm", "--output", "web/elm.js"]
+workspace = false
+
+[tasks.watch-dev-ui]
+command = "elm"
+args = ["make", "ui/Main.elm", "--output", "www/elm.js"]
+watch = { watch = ["./ui/"] }
+workspace = false
+
+[tasks.release-ui]
+command = "elm"
+args = ["make", "ui/Main.elm", "--output", "web/elm.js", "--optimize"]
+workspace = false
+
+[tasks.dev-lib]
+command = "wasm-pack"
+args = ["build", "--target", "web", "lib", "--out-dir", "../www/lib/", "--no-typescript", "--dev"]
+workspace = false
+
+[tasks.watch-dev-lib]
+command = "wasm-pack"
+args = ["build", "--target", "web", "lib", "--out-dir", "../www/lib/", "--no-typescript", "--dev"]
+watch = { watch = ["./lib/"] }
+workspace = false
+
+[tasks.release-lib]
+command = "wasm-pack"
+args = ["build", "--target", "web", "lib", "--out-dir", "../www/lib/", "--no-typescript", "--release"]
+workspace = false
+

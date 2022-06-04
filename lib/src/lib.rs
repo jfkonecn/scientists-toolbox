@@ -1,4 +1,5 @@
 use wasm_bindgen::prelude::*;
+mod thermo;
 
 #[wasm_bindgen]
 extern "C" {

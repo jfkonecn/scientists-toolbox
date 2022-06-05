@@ -12,3 +12,10 @@ watch = { watch = ["./src"] }
 command = "wasm-pack"
 args = ["build", "--target", "web", "--out-dir", "./www/lib/", "--no-typescript", "--release"]
 
+[tasks.tailwind-dev]
+command = "npx"
+args = ["tailwindcss", "-c", "./tailwind.config.js", "-o", "./www/index.css"]
+
+[tasks.tailwind-release]
+command = "npx"
+args = ["tailwindcss", "-c", "./tailwind.config.js", "-o", "./www/index.css", "--minify"]

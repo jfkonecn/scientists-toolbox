@@ -11,6 +11,5 @@ cargo install cargo-make
 
 2. Run build
 ```sh
-cargo make dev-lib
-cargo make dev-ui
+cargo make dev
 ```

@@ -2,7 +2,7 @@
 use crate::thermo::types::*;
 
 enum Iapws97Region {
-    OutOfRange,
+    OutOfRange(OutOfRange),
     Region1,
     Region2,
     Region3,
@@ -41,15 +41,59 @@ pub enum SteamQuery {
     },
 }
 
-pub fn get_steam_table_entry(query: SteamQuery) -> PtvEntry {
-    unimplemented!();
+#[derive(Debug, PartialEq)]
+pub enum SteamQueryErr {
+    OutOfRange(OutOfRange),
+}
+
+#[derive(Debug, PartialEq)]
+pub enum OutOfRange {
+    TemperatureLow,
+    TemperatureHigh,
+    PressureLow,
+    PressureHigh,
+}
+
+fn resolve_region(query: SteamQuery) -> Iapws97Region {
+    match query {
+        SteamQuery::PtQuery {
+            pressure: _,
+            temperature: t,
+        } if t < 273.15 => Iapws97Region::OutOfRange(OutOfRange::TemperatureLow),
+        SteamQuery::PtQuery {
+            pressure: p,
+            temperature: t,
+        } if p > 50e6 && t > 800.0 + 273.15 => {
+            Iapws97Region::OutOfRange(OutOfRange::TemperatureHigh)
+        }
+        SteamQuery::PtQuery {
+            pressure: _,
+            temperature: t,
+        } if t > 2000.0 + 273.15 => Iapws97Region::OutOfRange(OutOfRange::TemperatureHigh),
+        SteamQuery::PtQuery {
+            pressure: p,
+            temperature: _,
+        } if p < 0.0 => Iapws97Region::OutOfRange(OutOfRange::PressureLow),
+        SteamQuery::PtQuery {
+            pressure: p,
+            temperature: _,
+        } if p > 100e6 => Iapws97Region::OutOfRange(OutOfRange::PressureHigh),
+        _ => unimplemented!(),
+    }
+}
+
+pub fn get_steam_table_entry(query: SteamQuery) -> Result<PtvEntry, SteamQueryErr> {
+    match resolve_region(query) {
+        Iapws97Region::OutOfRange(x) => Err(SteamQueryErr::OutOfRange(x)),
+        _ => unimplemented!(),
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    macro_rules! get_steam_table_entry_tests {
+    macro_rules! get_steam_table_valid_entry_tests {
         ($($name:ident: $value:expr,)*) => {
         $(
             #[test]
@@ -60,13 +104,13 @@ mod tests {
         )*
         }
     }
-    get_steam_table_entry_tests! {
-        steam_table_1: (
+    get_steam_table_valid_entry_tests! {
+        steam_table_01: (
             SteamQuery::PtQuery {
                 temperature: 750.0,
                 pressure: 78.309563916917e6,
             },
-            PtvEntry {
+            Ok(PtvEntry {
                 temperature: 750.0,
                 pressure: 78.309563916917e6,
                 phase_region: PhaseRegion::SupercriticalFluid,
@@ -77,14 +121,14 @@ mod tests {
                 cp: 6.341653594791e3,
                 speed_of_sound: 760.696040876798,
                 specific_volume: 1.0 / 500.0,
-            }
+            })
         ),
-        steam_table_2: (
+        steam_table_02: (
             SteamQuery::PtQuery {
                 temperature: 473.15,
                 pressure: 40e6,
             },
-            PtvEntry {
+            Ok(PtvEntry {
                 temperature: 473.15,
                 pressure: 40e6,
                 phase_region: PhaseRegion::NonCritical(NonCriticalPhaseRegion::Liquid),
@@ -95,14 +139,14 @@ mod tests {
                 cp: 4.315767590903e3,
                 speed_of_sound: 1457.418351596083,
                 specific_volume: 0.001122406088,
-            }
+            })
         ),
-        steam_table_3: (
+        steam_table_03: (
             SteamQuery::PtQuery {
                 temperature: 2000.0,
                 pressure: 30e6,
             },
-            PtvEntry {
+            Ok(PtvEntry {
                 temperature: 2000.0,
                 pressure: 30e6,
                 phase_region: PhaseRegion::SupercriticalFluid,
@@ -113,14 +157,14 @@ mod tests {
                 cp: 2.885698818781e3,
                 speed_of_sound: 1067.369478777425,
                 specific_volume: 0.03113852187,
-            }
+            })
         ),
-        steam_table_4: (
+        steam_table_04: (
             SteamQuery::PtQuery {
                 temperature: 823.15,
                 pressure: 14e6,
             },
-            PtvEntry {
+            Ok(PtvEntry {
                 temperature: 823.15,
                 pressure: 14e6,
                 phase_region: PhaseRegion::Gas,
@@ -131,14 +175,14 @@ mod tests {
                 cp: 2.666558503968e3,
                 speed_of_sound: 666.050616844223,
                 specific_volume: 0.024763222774,
-            }
+            })
         ),
-        steam_table_5: (
+        steam_table_05: (
             SteamQuery::SatPQuery {
                 pressure: 0.2e6,
                 phase_region: NonCriticalPhaseRegion::Liquid,
             },
-            PtvEntry {
+            Ok(PtvEntry {
                 temperature: 393.361545936488,
                 pressure: 0.2e6,
                 phase_region: PhaseRegion::NonCritical(NonCriticalPhaseRegion::Liquid),
@@ -149,14 +193,14 @@ mod tests {
                 cp: 4246.73524917536,
                 speed_of_sound: 1520.69128792808,
                 specific_volume: 0.00106051840643552,
-            }
+            })
         ),
-        steam_table_6: (
+        steam_table_06: (
             SteamQuery::SatPQuery {
                 pressure: 0.2e6,
                 phase_region: NonCriticalPhaseRegion::Vapor,
             },
-            PtvEntry {
+            Ok(PtvEntry {
                 temperature: 393.361545936488,
                 pressure: 0.2e6,
                 phase_region: PhaseRegion::NonCritical(NonCriticalPhaseRegion::Vapor),
@@ -167,14 +211,14 @@ mod tests {
                 cp: 2175.22318865273,
                 speed_of_sound: 481.883535821489,
                 specific_volume: 0.885735065081644,
-            }
+            })
         ),
-        steam_table_7: (
+        steam_table_07: (
             SteamQuery::SatTQuery {
                 temperature: 393.361545936488,
                 phase_region: NonCriticalPhaseRegion::Liquid,
             },
-            PtvEntry {
+            Ok(PtvEntry {
                 temperature: 393.361545936488,
                 pressure: 0.2e6,
                 phase_region: PhaseRegion::NonCritical(NonCriticalPhaseRegion::Liquid),
@@ -185,14 +229,14 @@ mod tests {
                 cp: 4246.73524917536,
                 speed_of_sound: 1520.69128792808,
                 specific_volume: 0.00106051840643552,
-            }
+            })
         ),
-        steam_table_8: (
+        steam_table_08: (
             SteamQuery::SatTQuery {
                 temperature: 393.361545936488,
                 phase_region: NonCriticalPhaseRegion::Vapor,
             },
-            PtvEntry {
+            Ok(PtvEntry {
                 temperature: 393.361545936488,
                 pressure: 0.2e6,
                 phase_region: PhaseRegion::NonCritical(NonCriticalPhaseRegion::Vapor),
@@ -203,14 +247,14 @@ mod tests {
                 cp: 2175.22318865273,
                 speed_of_sound: 481.883535821489,
                 specific_volume: 0.885735065081644,
-            }
+            })
         ),
-        steam_table_9: (
+        steam_table_09: (
             SteamQuery::EntropyPQuery {
                 entropy: 4.469719056217e3,
                 pressure: 78.309563916917e6,
             },
-            PtvEntry {
+            Ok(PtvEntry {
                 temperature: 750.0,
                 pressure: 78.309563916917e6,
                 phase_region: PhaseRegion::SupercriticalFluid,
@@ -221,14 +265,14 @@ mod tests {
                 cp: 6.341653594791e3,
                 speed_of_sound: 760.696040876798,
                 specific_volume: 1.0 / 500.0,
-            }
+            })
         ),
         steam_table_10: (
             SteamQuery::EntropyPQuery {
                 entropy: 2.275752861241e3,
                 pressure: 40e6,
             },
-            PtvEntry {
+            Ok(PtvEntry {
                 temperature: 473.15,
                 pressure: 40e6,
                 phase_region: PhaseRegion::NonCritical(NonCriticalPhaseRegion::Liquid),
@@ -239,14 +283,14 @@ mod tests {
                 cp: 4.315767590903e3,
                 speed_of_sound: 1457.418351596083,
                 specific_volume: 0.001122406088,
-            }
+            })
         ),
         steam_table_11: (
             SteamQuery::EntropyPQuery {
                 entropy: 8.536405231138e3,
                 pressure: 30e6,
             },
-            PtvEntry {
+            Ok(PtvEntry {
                 temperature: 2000.0,
                 pressure: 30e6,
                 phase_region: PhaseRegion::SupercriticalFluid,
@@ -257,14 +301,14 @@ mod tests {
                 cp: 2.885698818781e3,
                 speed_of_sound: 1067.369478777425,
                 specific_volume: 0.03113852187,
-            }
+            })
         ),
         steam_table_12: (
             SteamQuery::EntropyPQuery {
                 entropy: 6.564768889364e3,
                 pressure: 14e6,
             },
-            PtvEntry {
+            Ok(PtvEntry {
                 temperature: 823.15,
                 pressure: 14e6,
                 phase_region: PhaseRegion::Gas,
@@ -275,14 +319,14 @@ mod tests {
                 cp: 2.666558503968e3,
                 speed_of_sound: 666.050616844223,
                 specific_volume: 0.024763222774,
-            }
+            })
         ),
         steam_table_13: (
             SteamQuery::EntropyPQuery {
                 entropy: 6.6858e3,
                 pressure: 10e3,
             },
-            PtvEntry {
+            Ok(PtvEntry {
                 temperature: 318.957548207023,
                 pressure: 10e3,
                 phase_region: PhaseRegion::Composite(
@@ -297,14 +341,14 @@ mod tests {
                 cp: 2377.86300751001,
                 speed_of_sound: 655.005141924186,
                 specific_volume: 1.0 / 193.16103883,
-            }
+            })
         ),
         steam_table_14: (
             SteamQuery::EnthalpyPQuery {
                 enthalpy: 2258.688445460262e3,
                 pressure: 78.309563916917e6,
             },
-            PtvEntry {
+            Ok(PtvEntry {
                 temperature: 750.0,
                 pressure: 78.309563916917e6,
                 phase_region: PhaseRegion::SupercriticalFluid,
@@ -315,14 +359,14 @@ mod tests {
                 cp: 6.341653594791e3,
                 speed_of_sound: 760.696040876798,
                 specific_volume: 1.0 / 500.0,
-            }
+            })
         ),
         steam_table_15: (
             SteamQuery::EnthalpyPQuery {
                 enthalpy: 870.124259682489e3,
                 pressure: 40e6,
             },
-            PtvEntry {
+            Ok(PtvEntry {
                 temperature: 473.15,
                 pressure: 40e6,
                 phase_region: PhaseRegion::NonCritical(NonCriticalPhaseRegion::Liquid),
@@ -333,14 +377,14 @@ mod tests {
                 cp: 4.315767590903e3,
                 speed_of_sound: 1457.418351596083,
                 specific_volume: 0.001122406088,
-            }
+            })
         ),
         steam_table_16: (
             SteamQuery::EnthalpyPQuery {
                 enthalpy: 6571.226038618478e3,
                 pressure: 30e6,
             },
-            PtvEntry {
+            Ok(PtvEntry {
                 temperature: 2000.0,
                 pressure: 30e6,
                 phase_region: PhaseRegion::SupercriticalFluid,
@@ -351,14 +395,14 @@ mod tests {
                 cp: 2.885698818781e3,
                 speed_of_sound: 1067.369478777425,
                 specific_volume: 0.03113852187,
-            }
+            })
         ),
         steam_table_17: (
             SteamQuery::EnthalpyPQuery {
                 enthalpy: 3460.987255128561e3,
                 pressure: 14e6,
             },
-            PtvEntry {
+            Ok(PtvEntry {
                 temperature: 823.15,
                 pressure: 14e6,
                 phase_region: PhaseRegion::Gas,
@@ -369,14 +413,14 @@ mod tests {
                 cp: 2.666558503968e3,
                 speed_of_sound: 666.050616844223,
                 specific_volume: 0.024763222774,
-            }
+            })
         ),
         steam_table_18: (
             SteamQuery::EnthalpyPQuery {
                 enthalpy: 2117222.94886314,
                 pressure: 10e3,
             },
-            PtvEntry {
+            Ok(PtvEntry {
                 temperature: 318.957548207023,
                 pressure: 10e3,
                 phase_region: PhaseRegion::Composite(
@@ -391,7 +435,63 @@ mod tests {
                 cp: 2377.86300751001,
                 speed_of_sound: 655.005141924186,
                 specific_volume: 1.0 / 193.16103883,
-            }
+            })
+        ),
+        steam_table_19: (
+            SteamQuery::PtQuery {
+                temperature:273.0,
+                pressure: 40e6,
+            },
+            Err(SteamQueryErr::OutOfRange(OutOfRange::TemperatureLow))
+        ),
+        steam_table_20: (
+            SteamQuery::PtQuery {
+                temperature:273.0,
+                pressure: 60e6,
+            },
+            Err(SteamQueryErr::OutOfRange(OutOfRange::TemperatureLow))
+        ),
+        steam_table_21: (
+            SteamQuery::PtQuery {
+                temperature:2001.0 + 273.15,
+                pressure: 40e6,
+            },
+            Err(SteamQueryErr::OutOfRange(OutOfRange::TemperatureHigh))
+        ),
+        steam_table_22: (
+            SteamQuery::PtQuery {
+                temperature:801.0 + 273.0,
+                pressure: 60e6,
+            },
+            Err(SteamQueryErr::OutOfRange(OutOfRange::TemperatureHigh))
+        ),
+        steam_table_23: (
+            SteamQuery::PtQuery {
+                temperature:799.0 + 273.15,
+                pressure: -1.0,
+            },
+            Err(SteamQueryErr::OutOfRange(OutOfRange::PressureLow))
+        ),
+        steam_table_24: (
+            SteamQuery::PtQuery {
+                temperature:801.0 + 273.15,
+                pressure: -1.0,
+            },
+            Err(SteamQueryErr::OutOfRange(OutOfRange::PressureLow))
+        ),
+        steam_table_25: (
+            SteamQuery::PtQuery {
+                temperature:801.0 + 273.15,
+                pressure: 51e6,
+            },
+            Err(SteamQueryErr::OutOfRange(OutOfRange::TemperatureHigh))
+        ),
+        steam_table_26: (
+            SteamQuery::PtQuery {
+                temperature:799.0 + 273.15,
+                pressure: 101e6,
+            },
+            Err(SteamQueryErr::OutOfRange(OutOfRange::PressureHigh))
         ),
     }
 }

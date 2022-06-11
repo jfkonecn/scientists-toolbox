@@ -1,16 +1,16 @@
 pub struct IjnRegionPoint {
-    i: f64,
-    j: f64,
-    n: f64,
+    pub i: f64,
+    pub j: f64,
+    pub n: f64,
 }
 
 pub struct JnRegionPoint {
-    j: f64,
-    n: f64,
+    pub j: f64,
+    pub n: f64,
 }
 
 pub struct NRegionPoint {
-    n: f64,
+    pub n: f64,
 }
 
 pub enum Region3Point {

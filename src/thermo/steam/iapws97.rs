@@ -1,8 +1,9 @@
 // https://github.com/jfkonecn/thermo/blob/feature/issue-42/thermo/steam_properties.py
+use crate::thermo::steam::iapws97_constants::*;
+use crate::thermo::steam::water_constants::*;
 use crate::thermo::types::*;
 
 enum Iapws97Region {
-    OutOfRange(OutOfRange),
     Region1,
     Region2,
     Region3,
@@ -10,23 +11,37 @@ enum Iapws97Region {
     Region5,
 }
 
-pub enum SteamQuery {
-    PtQuery {
-        // Pa
-        pressure: f64,
-        // K
-        temperature: f64,
-    },
+pub struct PtPoint {
+    // Pa
+    pub pressure: f64,
+    // K
+    pub temperature: f64,
+}
+
+#[derive(Debug, PartialEq)]
+pub enum SteamNonCriticalPhaseRegion {
+    // Pressure is less than both the sublimation and vaporization curve and is below the critical temperature
+    Vapor,
+    // Pressure is above the vaporization curve and the temperature is greater than the fusion curve and less than the critical temperature
+    Liquid,
+}
+
+pub enum SatQuery {
     SatTQuery {
         // K
         temperature: f64,
-        phase_region: NonCriticalPhaseRegion,
+        phase_region: SteamNonCriticalPhaseRegion,
     },
     SatPQuery {
         // Pa
         pressure: f64,
-        phase_region: NonCriticalPhaseRegion,
+        phase_region: SteamNonCriticalPhaseRegion,
     },
+}
+
+pub enum SteamQuery {
+    PtQuery(PtPoint),
+    SatQuery(SatQuery),
     EntropyPQuery {
         // J/(kg * K)
         entropy: f64,
@@ -52,41 +67,198 @@ pub enum OutOfRange {
     TemperatureHigh,
     PressureLow,
     PressureHigh,
+    AboveCriticalTemperature,
+    BelowCriticalTemperature,
+    AboveCriticalPressure,
 }
 
-fn resolve_region(query: SteamQuery) -> Iapws97Region {
-    match query {
-        SteamQuery::PtQuery {
-            pressure: _,
-            temperature: t,
-        } if t < 273.15 => Iapws97Region::OutOfRange(OutOfRange::TemperatureLow),
-        SteamQuery::PtQuery {
-            pressure: p,
-            temperature: t,
-        } if p > 50e6 && t > 800.0 + 273.15 => {
-            Iapws97Region::OutOfRange(OutOfRange::TemperatureHigh)
+fn get_sat_pressure(temperature: f64) -> Result<f64, OutOfRange> {
+    match temperature {
+        t if t > CRITICAL_TEMPERATURE => Result::Err(OutOfRange::AboveCriticalTemperature),
+        t => {
+            let sat_temp_ratio = t / 1.0;
+            let theta = sat_temp_ratio + (region_4[8].n / (sat_temp_ratio - region_4[9].n));
+            let a = f64::powi(theta, 2) + region_4[0].n * theta + region_4[1].n;
+            let b = region_4[2].n * f64::powi(theta, 2) + region_4[3].n * theta + region_4[4].n;
+            let c = region_4[5].n * f64::powi(theta, 2) + region_4[6].n * theta + region_4[7].n;
+            let pressure = f64::powi(
+                (2.0 * a) / (-b + f64::powf(f64::powi(b, 2) - 4.0 * a * c, 0.5)),
+                4,
+            ) * 1e6;
+            Result::Ok(pressure)
         }
-        SteamQuery::PtQuery {
+    }
+}
+
+fn get_sat_temperature(pressure: f64) -> Result<f64, OutOfRange> {
+    match pressure {
+        p if p > CRITICAL_PRESSURE => Err(OutOfRange::AboveCriticalPressure),
+        p => {
+            let beta = f64::powf(p / 1e6, 0.25);
+            let e = f64::powi(beta, 2) + region_4[2].n * beta + region_4[5].n;
+            let f = region_4[0].n * f64::powi(beta, 2) + region_4[3].n * beta + region_4[6].n;
+            let g = region_4[1].n * f64::powi(beta, 2) + region_4[4].n * beta + region_4[7].n;
+            let d = (2.0 * g) / (-f - f64::powf(f64::powi(f, 2) - 4.0 * e * g, 0.5));
+            let temperature = (region_4[9].n + d
+                - f64::powf(
+                    f64::powi(region_4[9].n + d, 2) - 4.0 * (region_4[8].n + region_4[9].n * d),
+                    0.5,
+                ))
+                / 2.0;
+            Ok(temperature)
+        }
+    }
+}
+
+fn get_boundary_34_pressure(temperature: f64) -> Result<f64, OutOfRange> {
+    match temperature {
+        t if t < CRITICAL_TEMPERATURE => Err(OutOfRange::BelowCriticalTemperature),
+        t => {
+            let theta = t / 1.0;
+            let pressure = (boundary_34[0].n
+                + boundary_34[1].n * theta
+                + boundary_34[2].n * f64::powi(theta, 2))
+                * 1e6;
+            Ok(pressure)
+        }
+    }
+}
+
+fn extract_pressure(query: &SteamQuery) -> Option<f64> {
+    match query {
+        SteamQuery::PtQuery(PtPoint {
+            pressure: p,
+            temperature: _,
+        })
+        | SteamQuery::SatQuery(SatQuery::SatPQuery {
+            pressure: p,
+            phase_region: _,
+        })
+        | SteamQuery::EntropyPQuery {
+            entropy: _,
+            pressure: p,
+        }
+        | SteamQuery::EnthalpyPQuery {
+            enthalpy: _,
+            pressure: p,
+        } => Some(*p),
+        _ => None,
+    }
+}
+
+fn extract_temperature(query: &SteamQuery) -> Option<f64> {
+    match query {
+        SteamQuery::PtQuery(PtPoint {
             pressure: _,
             temperature: t,
-        } if t > 2000.0 + 273.15 => Iapws97Region::OutOfRange(OutOfRange::TemperatureHigh),
-        SteamQuery::PtQuery {
-            pressure: p,
-            temperature: _,
-        } if p < 0.0 => Iapws97Region::OutOfRange(OutOfRange::PressureLow),
-        SteamQuery::PtQuery {
-            pressure: p,
-            temperature: _,
-        } if p > 100e6 => Iapws97Region::OutOfRange(OutOfRange::PressureHigh),
-        _ => unimplemented!(),
+        })
+        | SteamQuery::SatQuery(SatQuery::SatTQuery {
+            temperature: t,
+            phase_region: _,
+        }) => Some(*t),
+        _ => None,
     }
+}
+
+fn check_if_out_of_range(query: &SteamQuery) -> Result<(), OutOfRange> {
+    let opt_p = extract_pressure(&query);
+    let opt_t = extract_temperature(&query);
+    match (opt_p, opt_t) {
+        (_, Some(t)) if t < 273.15 => Err(OutOfRange::TemperatureLow),
+        (_, Some(t)) if t > 2000.0 + 273.15 => Err(OutOfRange::TemperatureHigh),
+        (Some(p), Some(t)) if p > 50e6 && t > 800.0 + 273.15 => Err(OutOfRange::TemperatureHigh),
+        (Some(p), _) if p < 0.0 => Err(OutOfRange::PressureLow),
+        (Some(p), _) if p > 100e6 => Err(OutOfRange::PressureHigh),
+        _ => Ok(()),
+    }
+}
+
+fn get_region_from_pt_point(pt_point: &PtPoint) -> Result<Iapws97Region, OutOfRange> {
+    let t = pt_point.temperature;
+    let p = pt_point.pressure;
+    let opt_sat_p_result = get_sat_pressure(t);
+    let opt_boundary_result = get_boundary_34_pressure(t);
+    match (opt_sat_p_result, opt_boundary_result) {
+        (_, _) if t > 273.15 + 800.0 => Ok(Iapws97Region::Region5),
+        (_, _) if t > 273.15 + 600.0 => Ok(Iapws97Region::Region2),
+        (Ok(sat_p), _) if p == sat_p => Ok(Iapws97Region::Region4),
+        (Ok(sat_p), _) if p > sat_p => Ok(Iapws97Region::Region2),
+        (Ok(_), _) => Ok(Iapws97Region::Region1),
+        (_, Ok(boundary)) if p > boundary => Ok(Iapws97Region::Region2),
+        (_, Ok(_)) => Ok(Iapws97Region::Region3),
+        (Err(err), _) => Err(err),
+    }
+}
+
+fn get_region_from_sat_query(sat_query: &SatQuery) -> Result<(PtPoint, Iapws97Region), OutOfRange> {
+    let region = match sat_query {
+        SatQuery::SatTQuery {
+            temperature: _,
+            phase_region: r,
+        }
+        | SatQuery::SatPQuery {
+            pressure: _,
+            phase_region: r,
+        } => match *r {
+            SteamNonCriticalPhaseRegion::Liquid => Iapws97Region::Region1,
+            SteamNonCriticalPhaseRegion::Vapor => Iapws97Region::Region2,
+        },
+    };
+    let pt_result = match sat_query {
+        SatQuery::SatTQuery {
+            temperature: t,
+            phase_region: _,
+        } => get_sat_pressure(*t).map(|p| PtPoint {
+            pressure: p,
+            temperature: *t,
+        }),
+        SatQuery::SatPQuery {
+            pressure: p,
+            phase_region: _,
+        } => get_sat_temperature(*p).map(|t| PtPoint {
+            pressure: *p,
+            temperature: t,
+        }),
+    };
+    pt_result.map(|pt| (pt, region))
+}
+
+fn get_entry_from_pt_point(
+    point: &PtPoint,
+    region: Iapws97Region,
+) -> Result<PtvEntry, SteamQueryErr> {
+    unimplemented!()
+}
+
+fn iterate_pt_entry_solution(
+    pressure: f64,
+    target_value: f64,
+    get_prop_value: fn(entry: &PtvEntry) -> f64,
+) -> Result<PtvEntry, SteamQueryErr> {
+    unimplemented!()
 }
 
 pub fn get_steam_table_entry(query: SteamQuery) -> Result<PtvEntry, SteamQueryErr> {
-    match resolve_region(query) {
-        Iapws97Region::OutOfRange(x) => Err(SteamQueryErr::OutOfRange(x)),
-        _ => unimplemented!(),
-    }
+    let f = |err| SteamQueryErr::OutOfRange(err);
+
+    check_if_out_of_range(&query)
+        .map_err(f)
+        .and_then(|_| match query {
+            SteamQuery::PtQuery(point) => get_region_from_pt_point(&point)
+                .map_err(f)
+                .and_then(|r| get_entry_from_pt_point(&point, r)),
+            SteamQuery::SatQuery(sat_query) => get_region_from_sat_query(&sat_query)
+                .map_err(f)
+                .and_then(|(p, r)| get_entry_from_pt_point(&p, r)),
+            SteamQuery::EntropyPQuery {
+                pressure: p,
+                entropy: e,
+            } => iterate_pt_entry_solution(p, e, |point| point.entropy),
+            SteamQuery::EnthalpyPQuery {
+                pressure: p,
+                enthalpy: e,
+            } => iterate_pt_entry_solution(p, e, |point| point.enthalpy),
+        })
 }
 
 #[cfg(test)]
@@ -106,10 +278,10 @@ mod tests {
     }
     get_steam_table_valid_entry_tests! {
         steam_table_01: (
-            SteamQuery::PtQuery {
+            SteamQuery::PtQuery(PtPoint {
                 temperature: 750.0,
                 pressure: 78.309563916917e6,
-            },
+            }),
             Ok(PtvEntry {
                 temperature: 750.0,
                 pressure: 78.309563916917e6,
@@ -124,10 +296,10 @@ mod tests {
             })
         ),
         steam_table_02: (
-            SteamQuery::PtQuery {
+            SteamQuery::PtQuery(PtPoint {
                 temperature: 473.15,
                 pressure: 40e6,
-            },
+            }),
             Ok(PtvEntry {
                 temperature: 473.15,
                 pressure: 40e6,
@@ -142,10 +314,10 @@ mod tests {
             })
         ),
         steam_table_03: (
-            SteamQuery::PtQuery {
+            SteamQuery::PtQuery(PtPoint {
                 temperature: 2000.0,
                 pressure: 30e6,
-            },
+            }),
             Ok(PtvEntry {
                 temperature: 2000.0,
                 pressure: 30e6,
@@ -160,10 +332,10 @@ mod tests {
             })
         ),
         steam_table_04: (
-            SteamQuery::PtQuery {
+            SteamQuery::PtQuery(PtPoint {
                 temperature: 823.15,
                 pressure: 14e6,
-            },
+            }),
             Ok(PtvEntry {
                 temperature: 823.15,
                 pressure: 14e6,
@@ -178,10 +350,10 @@ mod tests {
             })
         ),
         steam_table_05: (
-            SteamQuery::SatPQuery {
+            SteamQuery::SatQuery(SatQuery::SatPQuery {
                 pressure: 0.2e6,
-                phase_region: NonCriticalPhaseRegion::Liquid,
-            },
+                phase_region: SteamNonCriticalPhaseRegion::Liquid,
+            }),
             Ok(PtvEntry {
                 temperature: 393.361545936488,
                 pressure: 0.2e6,
@@ -196,10 +368,10 @@ mod tests {
             })
         ),
         steam_table_06: (
-            SteamQuery::SatPQuery {
+            SteamQuery::SatQuery(SatQuery::SatPQuery {
                 pressure: 0.2e6,
-                phase_region: NonCriticalPhaseRegion::Vapor,
-            },
+                phase_region: SteamNonCriticalPhaseRegion::Vapor,
+            }),
             Ok(PtvEntry {
                 temperature: 393.361545936488,
                 pressure: 0.2e6,
@@ -214,10 +386,10 @@ mod tests {
             })
         ),
         steam_table_07: (
-            SteamQuery::SatTQuery {
+            SteamQuery::SatQuery(SatQuery::SatTQuery {
                 temperature: 393.361545936488,
-                phase_region: NonCriticalPhaseRegion::Liquid,
-            },
+                phase_region: SteamNonCriticalPhaseRegion::Liquid,
+            }),
             Ok(PtvEntry {
                 temperature: 393.361545936488,
                 pressure: 0.2e6,
@@ -232,10 +404,10 @@ mod tests {
             })
         ),
         steam_table_08: (
-            SteamQuery::SatTQuery {
+            SteamQuery::SatQuery(SatQuery::SatTQuery {
                 temperature: 393.361545936488,
-                phase_region: NonCriticalPhaseRegion::Vapor,
-            },
+                phase_region: SteamNonCriticalPhaseRegion::Vapor,
+            }),
             Ok(PtvEntry {
                 temperature: 393.361545936488,
                 pressure: 0.2e6,
@@ -438,59 +610,59 @@ mod tests {
             })
         ),
         steam_table_19: (
-            SteamQuery::PtQuery {
+            SteamQuery::PtQuery(PtPoint {
                 temperature:273.0,
                 pressure: 40e6,
-            },
+            }),
             Err(SteamQueryErr::OutOfRange(OutOfRange::TemperatureLow))
         ),
         steam_table_20: (
-            SteamQuery::PtQuery {
+            SteamQuery::PtQuery(PtPoint {
                 temperature:273.0,
                 pressure: 60e6,
-            },
+            }),
             Err(SteamQueryErr::OutOfRange(OutOfRange::TemperatureLow))
         ),
         steam_table_21: (
-            SteamQuery::PtQuery {
+            SteamQuery::PtQuery(PtPoint {
                 temperature:2001.0 + 273.15,
                 pressure: 40e6,
-            },
+            }),
             Err(SteamQueryErr::OutOfRange(OutOfRange::TemperatureHigh))
         ),
         steam_table_22: (
-            SteamQuery::PtQuery {
+            SteamQuery::PtQuery(PtPoint {
                 temperature:801.0 + 273.0,
                 pressure: 60e6,
-            },
+            }),
             Err(SteamQueryErr::OutOfRange(OutOfRange::TemperatureHigh))
         ),
         steam_table_23: (
-            SteamQuery::PtQuery {
+            SteamQuery::PtQuery(PtPoint {
                 temperature:799.0 + 273.15,
                 pressure: -1.0,
-            },
+            }),
             Err(SteamQueryErr::OutOfRange(OutOfRange::PressureLow))
         ),
         steam_table_24: (
-            SteamQuery::PtQuery {
+            SteamQuery::PtQuery(PtPoint {
                 temperature:801.0 + 273.15,
                 pressure: -1.0,
-            },
+            }),
             Err(SteamQueryErr::OutOfRange(OutOfRange::PressureLow))
         ),
         steam_table_25: (
-            SteamQuery::PtQuery {
+            SteamQuery::PtQuery(PtPoint {
                 temperature:801.0 + 273.15,
                 pressure: 51e6,
-            },
+            }),
             Err(SteamQueryErr::OutOfRange(OutOfRange::TemperatureHigh))
         ),
         steam_table_26: (
-            SteamQuery::PtQuery {
+            SteamQuery::PtQuery(PtPoint {
                 temperature:799.0 + 273.15,
                 pressure: 101e6,
-            },
+            }),
             Err(SteamQueryErr::OutOfRange(OutOfRange::PressureHigh))
         ),
     }

@@ -26,20 +26,26 @@ pub enum CompositePhaseRegion {
 }
 
 #[derive(Debug, PartialEq)]
+pub enum CompositePhaseRegionErr {
+    FractionsDoNotAddUpToOne,
+    FractionsMustBePositive,
+}
+
+#[derive(Debug, PartialEq)]
 pub struct SolidLiquid {
     solid_frac: f64,
     liquid_frac: f64,
 }
 
 impl SolidLiquid {
-    pub fn new(solid_frac: f64, liquid_frac: f64) -> Result<SolidLiquid, String> {
+    pub fn new(solid_frac: f64, liquid_frac: f64) -> Result<SolidLiquid, CompositePhaseRegionErr> {
         if solid_frac + liquid_frac == 1.0 {
             Ok(SolidLiquid {
                 solid_frac,
                 liquid_frac,
             })
         } else {
-            Err(String::from("Fractions must add up to 1"))
+            Err(CompositePhaseRegionErr::FractionsDoNotAddUpToOne)
         }
     }
 }
@@ -51,14 +57,14 @@ pub struct LiquidVapor {
 }
 
 impl LiquidVapor {
-    pub fn new(liquid_frac: f64, vapor_frac: f64) -> Result<LiquidVapor, String> {
+    pub fn new(liquid_frac: f64, vapor_frac: f64) -> Result<LiquidVapor, CompositePhaseRegionErr> {
         if liquid_frac + vapor_frac == 1.0 {
             Ok(LiquidVapor {
                 liquid_frac,
                 vapor_frac,
             })
         } else {
-            Err(String::from("Fractions must add up to 1"))
+            Err(CompositePhaseRegionErr::FractionsDoNotAddUpToOne)
         }
     }
 }
@@ -70,14 +76,14 @@ pub struct SolidVapor {
 }
 
 impl SolidVapor {
-    pub fn new(solid_frac: f64, vapor_frac: f64) -> Result<SolidVapor, String> {
+    pub fn new(solid_frac: f64, vapor_frac: f64) -> Result<SolidVapor, CompositePhaseRegionErr> {
         if solid_frac + vapor_frac == 1.0 {
             Ok(SolidVapor {
                 solid_frac,
                 vapor_frac,
             })
         } else {
-            Err(String::from("Fractions must add up to 1"))
+            Err(CompositePhaseRegionErr::FractionsDoNotAddUpToOne)
         }
     }
 }

@@ -1,4 +1,5 @@
 use wasm_bindgen::prelude::*;
+mod numerical_methods;
 mod thermo;
 mod ui;
 

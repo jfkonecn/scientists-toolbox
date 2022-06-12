@@ -1,4 +1,6 @@
 // https://github.com/jfkonecn/thermo/blob/feature/issue-42/thermo/steam_properties.py
+use crate::numerical_methods::root_finders::secant_method;
+use crate::numerical_methods::root_finders::RootFinderErr;
 use crate::thermo::steam::iapws97_constants::*;
 use crate::thermo::steam::water_constants::*;
 use crate::thermo::types::*;
@@ -59,6 +61,8 @@ pub enum SteamQuery {
 #[derive(Debug, PartialEq)]
 pub enum SteamQueryErr {
     OutOfRange(OutOfRange),
+    CompositePhaseRegionErr(CompositePhaseRegionErr),
+    FailedToConverge(RootFinderErr),
 }
 
 #[derive(Debug, PartialEq)]
@@ -230,12 +234,85 @@ fn get_entry_from_pt_point(
     unimplemented!()
 }
 
+fn interpolate_entry(
+    liquid_entry: &PtvEntry,
+    vapor_entry: &PtvEntry,
+    liq_frac: f64,
+) -> Result<PtvEntry, SteamQueryErr> {
+    let vap_frac = 1.0 - liq_frac;
+    let interpolate_entry_property =
+        |f: fn(e: &PtvEntry) -> f64| (f(liquid_entry) * liq_frac) + (f(vapor_entry) * vap_frac);
+    let phase_info_result = LiquidVapor::new(liq_frac, vap_frac)
+        .map(|x| PhaseRegion::Composite(CompositePhaseRegion::LiquidVapor(x)))
+        .map_err(|err| SteamQueryErr::CompositePhaseRegionErr(err));
+    let temperature = interpolate_entry_property(|x| x.temperature);
+    let pressure = interpolate_entry_property(|x| x.pressure);
+    let internal_energy = interpolate_entry_property(|x| x.internal_energy);
+    let enthalpy = interpolate_entry_property(|x| x.enthalpy);
+    let entropy = interpolate_entry_property(|x| x.entropy);
+    let cv = interpolate_entry_property(|x| x.cv);
+    let cp = interpolate_entry_property(|x| x.cp);
+    let speed_of_sound = interpolate_entry_property(|x| x.speed_of_sound);
+    let specific_volume = interpolate_entry_property(|x| x.specific_volume);
+    phase_info_result.map(|phase_region| PtvEntry {
+        temperature,
+        pressure,
+        phase_region,
+        internal_energy,
+        enthalpy,
+        entropy,
+        cv,
+        cp,
+        speed_of_sound,
+        specific_volume,
+    })
+}
+
 fn iterate_pt_entry_solution(
     pressure: f64,
     target_value: f64,
     get_prop_value: fn(entry: &PtvEntry) -> f64,
 ) -> Result<PtvEntry, SteamQueryErr> {
-    unimplemented!()
+    let liquid_entry_result = get_steam_table_entry(SteamQuery::SatQuery(SatQuery::SatPQuery {
+        pressure,
+        phase_region: SteamNonCriticalPhaseRegion::Liquid,
+    }));
+    let vapor_entry_result = get_steam_table_entry(SteamQuery::SatQuery(SatQuery::SatPQuery {
+        pressure,
+        phase_region: SteamNonCriticalPhaseRegion::Vapor,
+    }));
+
+    match (liquid_entry_result, vapor_entry_result) {
+        (Ok(liquid_entry), Ok(vapor_entry))
+            if get_prop_value(&liquid_entry) <= target_value
+                && get_prop_value(&vapor_entry) >= target_value =>
+        {
+            let liq_frac = (get_prop_value(&vapor_entry) - target_value)
+                / (get_prop_value(&vapor_entry) - get_prop_value(&liquid_entry));
+            interpolate_entry(&liquid_entry, &vapor_entry, liq_frac)
+        }
+        _ => {
+            let f = |temperature| {
+                let query_result = get_steam_table_entry(SteamQuery::PtQuery(PtPoint {
+                    pressure,
+                    temperature,
+                }));
+                if let Ok(entry) = query_result {
+                    get_prop_value(&entry) - target_value
+                } else {
+                    f64::NAN
+                }
+            };
+            secant_method(f, 300f64, 310f64, 1e-15)
+                .map_err(|err| SteamQueryErr::FailedToConverge(err))
+                .and_then(|temperature| {
+                    get_steam_table_entry(SteamQuery::PtQuery(PtPoint {
+                        pressure,
+                        temperature,
+                    }))
+                })
+        }
+    }
 }
 
 pub fn get_steam_table_entry(query: SteamQuery) -> Result<PtvEntry, SteamQueryErr> {
@@ -263,7 +340,9 @@ pub fn get_steam_table_entry(query: SteamQuery) -> Result<PtvEntry, SteamQueryEr
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
+    use assert_approx_eq::assert_approx_eq;
 
     macro_rules! get_steam_table_valid_entry_tests {
         ($($name:ident: $value:expr,)*) => {

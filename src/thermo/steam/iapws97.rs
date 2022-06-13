@@ -376,8 +376,72 @@ fn vapor_method(
     create_entry_from_region_point(specific_region_point, phase_info)
 }
 
+fn region3_by_specific_volume(pt_point: &PtPoint, specific_volume: f64) -> PtvEntry {
+    let density = 1f64 / specific_volume;
+    let n1 = region_3_n1.n;
+    let delta = density / 322f64;
+    let temperature = pt_point.temperature;
+    let mut tau = 647.096 / temperature;
+    let mut phi = n1 * f64::log(delta, 10f64);
+    let mut phi_delta = n1 / delta;
+    let mut phi_delta_delta = -n1 / f64::powi(delta, 2);
+    let mut phi_tau = 0f64;
+    let mut phi_tau_tau = 0f64;
+    let mut phi_delta_tau = 0f64;
+
+    for region_point in region_3.iter() {
+        let n = region_point.n;
+        let i = region_point.i;
+        let j = region_point.j;
+        phi += n * f64::powf(delta, i) * f64::powf(tau, j);
+        phi_delta += n * i * f64::powf(delta, i - 1f64) * f64::powf(tau, j);
+        phi_delta_delta += n * i * (i - 1f64) * f64::powf(delta, i - 2f64) * f64::powf(tau, j);
+        phi_tau += n * f64::powf(delta, i) * j * f64::powf(tau, j - 1f64);
+        phi_tau_tau += n * f64::powf(delta, i) * j * (j - 1f64) * f64::powf(tau, j - 2f64);
+        phi_delta_tau += n * i * f64::powf(delta, i - 1f64) * j * f64::powf(tau, j - 1f64);
+    }
+
+    let pressure = phi_delta * delta * density * GAS_CONSTANT * temperature;
+
+    let phase_info = PhaseRegion::SupercriticalFluid;
+    let internal_energy = tau * phi_tau * GAS_CONSTANT * temperature;
+    let enthalpy = (tau * phi_tau + delta * phi_delta) * GAS_CONSTANT * temperature;
+    let entropy = (tau * phi_tau - phi) * GAS_CONSTANT;
+    let cv = -f64::powi(tau, 2) * phi_tau_tau * GAS_CONSTANT;
+    let cp = (-f64::powi(tau, 2) * phi_tau_tau
+        + f64::powi(delta * phi_delta - delta * tau * phi_delta_tau, 2)
+            / (2f64 * delta * phi_delta + f64::powi(delta, 2) * phi_delta_delta))
+        * GAS_CONSTANT;
+
+    let speed_of_sound = f64::sqrt(
+        (2f64 * delta * phi_delta + f64::powi(delta, 2) * phi_delta_delta
+            - f64::powi(delta * phi_delta - delta * tau * phi_delta_tau, 2)
+                / (f64::powi(tau, 2) * phi_tau_tau))
+            * GAS_CONSTANT
+            * temperature,
+    );
+    PtvEntry {
+        temperature,
+        pressure,
+        phase_region: PhaseRegion::SupercriticalFluid,
+        internal_energy,
+        enthalpy,
+        entropy,
+        cv,
+        cp,
+        speed_of_sound,
+        specific_volume,
+    }
+}
+
 fn region3_method(point: &PtPoint) -> Result<PtvEntry, SteamQueryErr> {
-    unimplemented!()
+    let f = |x| {
+        let entry = region3_by_specific_volume(&point, x);
+        entry.specific_volume - x
+    };
+    secant_method(f, 1f64, 0.999, 1e-15)
+        .map(|x| region3_by_specific_volume(&point, x))
+        .map_err(|err| SteamQueryErr::FailedToConverge(err))
 }
 
 fn get_entry_from_pt_point(

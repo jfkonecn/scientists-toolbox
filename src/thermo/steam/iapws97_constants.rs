@@ -13,11 +13,6 @@ pub struct NRegionPoint {
     pub n: f64,
 }
 
-pub enum Region3Point {
-    Full(IjnRegionPoint),
-    Partial(NRegionPoint),
-}
-
 pub static region_1_and_4: &'static [IjnRegionPoint] = &[
     IjnRegionPoint {
         i: 0.0,
@@ -448,205 +443,206 @@ pub static region_2_residual: &'static [IjnRegionPoint] = &[
     },
 ];
 
-pub static region_3: &'static [Region3Point] = &[
-    Region3Point::Partial(NRegionPoint {
-        n: 1.0658070028513E+00,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+pub static region_3_n1: &'static NRegionPoint = &NRegionPoint {
+    n: 1.0658070028513E+00,
+};
+
+pub static region_3: &'static [IjnRegionPoint] = &[
+    IjnRegionPoint {
         i: 0.0,
         j: 0.0,
         n: -1.5732845290239E+01,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 0.0,
         j: 1.0,
         n: 2.0944396974307E+01,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 0.0,
         j: 2.0,
         n: -7.6867707878716E+00,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 0.0,
         j: 7.0,
         n: 2.6185947787954E+00,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 0.0,
         j: 10.0,
         n: -2.8080781148620E+00,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 0.0,
         j: 12.0,
         n: 1.2053369696517E+00,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 0.0,
         j: 23.0,
         n: -8.4566812812502E-03,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 1.0,
         j: 2.0,
         n: -1.2654315477714E+00,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 1.0,
         j: 6.0,
         n: -1.1524407806681E+00,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 1.0,
         j: 15.0,
         n: 8.8521043984318E-01,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 1.0,
         j: 17.0,
         n: -6.4207765181607E-01,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 2.0,
         j: 0.0,
         n: 3.8493460186671E-01,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 2.0,
         j: 2.0,
         n: -8.5214708824206E-01,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 2.0,
         j: 6.0,
         n: 4.8972281541877E+00,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 2.0,
         j: 7.0,
         n: -3.0502617256965E+00,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 2.0,
         j: 22.0,
         n: 3.9420536879154E-02,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 2.0,
         j: 26.0,
         n: 1.2558408424308E-01,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 3.0,
         j: 0.0,
         n: -2.7999329698710E-01,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 3.0,
         j: 2.0,
         n: 1.3899799569460E+00,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 3.0,
         j: 4.0,
         n: -2.0189915023570E+00,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 3.0,
         j: 16.0,
         n: -8.2147637173963E-03,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 3.0,
         j: 26.0,
         n: -4.7596035734923E-01,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 4.0,
         j: 0.0,
         n: 4.3984074473500E-02,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 4.0,
         j: 2.0,
         n: -4.4476435428739E-01,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 4.0,
         j: 4.0,
         n: 9.0572070719733E-01,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 4.0,
         j: 26.0,
         n: 7.0522450087967E-01,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 5.0,
         j: 1.0,
         n: 1.0770512626332E-01,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 5.0,
         j: 3.0,
         n: -3.2913623258954E-01,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 5.0,
         j: 26.0,
         n: -5.0871062041158E-01,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 6.0,
         j: 0.0,
         n: -2.2175400873096E-02,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 6.0,
         j: 2.0,
         n: 9.4260751665092E-02,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 6.0,
         j: 26.0,
         n: 1.6436278447961E-01,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 7.0,
         j: 2.0,
         n: -1.3503372241348E-02,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 8.0,
         j: 26.0,
         n: -1.4834345352472E-02,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 9.0,
         j: 2.0,
         n: 5.7922953628084E-04,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 9.0,
         j: 26.0,
         n: 3.2308904703711E-03,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 10.0,
         j: 0.0,
         n: 8.0964802996215E-05,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 10.0,
         j: 1.0,
         n: -1.6557679795037E-04,
-    }),
-    Region3Point::Full(IjnRegionPoint {
+    },
+    IjnRegionPoint {
         i: 11.0,
         j: 26.0,
         n: -4.4923899061815E-05,
-    }),
+    },
 ];
 
 pub static region_5_ideal: &'static [JnRegionPoint] = &[

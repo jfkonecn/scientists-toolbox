@@ -227,11 +227,46 @@ fn get_region_from_sat_query(sat_query: &SatQuery) -> Result<(PtPoint, Iapws97Re
     pt_result.map(|pt| (pt, region))
 }
 
+fn gibbs_method(point: &PtPoint) -> Result<PtvEntry, SteamQueryErr> {
+    unimplemented!()
+}
+
+fn vapor_method(
+    tau: f64,
+    tau_shift: f64,
+    pt_point: &PtPoint,
+    idealPoints: &[JnRegionPoint],
+    residualPoints: &[IjnRegionPoint],
+) -> Result<PtvEntry, SteamQueryErr> {
+    unimplemented!()
+}
+
+fn region3_method(point: &PtPoint) -> Result<PtvEntry, SteamQueryErr> {
+    unimplemented!()
+}
+
 fn get_entry_from_pt_point(
     point: &PtPoint,
     region: Iapws97Region,
 ) -> Result<PtvEntry, SteamQueryErr> {
-    unimplemented!()
+    match region {
+        Iapws97Region::Region1 | Iapws97Region::Region4 => gibbs_method(&point),
+        Iapws97Region::Region2 => vapor_method(
+            540f64 / point.temperature,
+            0.5,
+            &point,
+            region_2_ideal,
+            region_2_residual,
+        ),
+        Iapws97Region::Region3 => region3_method(&point),
+        Iapws97Region::Region5 => vapor_method(
+            100f64 / point.temperature,
+            0f64,
+            &point,
+            region_5_ideal,
+            region_5_residual,
+        ),
+    }
 }
 
 fn interpolate_entry(

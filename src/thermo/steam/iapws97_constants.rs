@@ -13,7 +13,7 @@ pub struct NRegionPoint {
     pub n: f64,
 }
 
-pub static region_1_and_4: &'static [IjnRegionPoint] = &[
+pub static REGION_1_AND_4: &'static [IjnRegionPoint] = &[
     IjnRegionPoint {
         i: 0.0,
         j: -2.0,
@@ -186,7 +186,7 @@ pub static region_1_and_4: &'static [IjnRegionPoint] = &[
     },
 ];
 
-pub static region_2_ideal: &'static [JnRegionPoint] = &[
+pub static REGION_2_IDEAL: &'static [JnRegionPoint] = &[
     JnRegionPoint {
         j: 0.0,
         n: -9.6927686500217E+00,
@@ -225,7 +225,7 @@ pub static region_2_ideal: &'static [JnRegionPoint] = &[
     },
 ];
 
-pub static region_2_residual: &'static [IjnRegionPoint] = &[
+pub static REGION_2_RESIDUAL: &'static [IjnRegionPoint] = &[
     IjnRegionPoint {
         i: 1.0,
         j: 0.0,
@@ -443,11 +443,11 @@ pub static region_2_residual: &'static [IjnRegionPoint] = &[
     },
 ];
 
-pub static region_3_n1: &'static NRegionPoint = &NRegionPoint {
+pub static REGION_3_N1: &'static NRegionPoint = &NRegionPoint {
     n: 1.0658070028513E+00,
 };
 
-pub static region_3: &'static [IjnRegionPoint] = &[
+pub static REGION_3: &'static [IjnRegionPoint] = &[
     IjnRegionPoint {
         i: 0.0,
         j: 0.0,
@@ -645,7 +645,7 @@ pub static region_3: &'static [IjnRegionPoint] = &[
     },
 ];
 
-pub static region_5_ideal: &'static [JnRegionPoint] = &[
+pub static REGION_5_IDEAL: &'static [JnRegionPoint] = &[
     JnRegionPoint {
         j: 0.0,
         n: -1.3179983674201E+01,
@@ -672,7 +672,7 @@ pub static region_5_ideal: &'static [JnRegionPoint] = &[
     },
 ];
 
-pub static region_5_residual: &'static [IjnRegionPoint] = &[
+pub static REGION_5_RESIDUAL: &'static [IjnRegionPoint] = &[
     IjnRegionPoint {
         i: 1.0,
         j: 1.0,
@@ -705,7 +705,7 @@ pub static region_5_residual: &'static [IjnRegionPoint] = &[
     },
 ];
 
-pub static boundary_34: &'static [NRegionPoint] = &[
+pub static BOUNDARY_34: &'static [NRegionPoint] = &[
     NRegionPoint { n: 348.05185628969 },
     NRegionPoint {
         n: -1.1671859879975,
@@ -717,7 +717,7 @@ pub static boundary_34: &'static [NRegionPoint] = &[
     NRegionPoint { n: 13.91883977887 },
 ];
 
-pub static region_4: &'static [NRegionPoint] = &[
+pub static REGION_4: &'static [NRegionPoint] = &[
     NRegionPoint { n: 1167.0521452767 },
     NRegionPoint {
         n: -724213.16703206,

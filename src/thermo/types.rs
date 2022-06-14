@@ -67,6 +67,14 @@ impl LiquidVapor {
             Err(CompositePhaseRegionErr::FractionsDoNotAddUpToOne)
         }
     }
+
+    pub fn get_liquid_frac(&self) -> f64 {
+        self.liquid_frac
+    }
+
+    pub fn get_vapor_frac(&self) -> f64 {
+        self.vapor_frac
+    }
 }
 
 #[derive(Debug, PartialEq)]

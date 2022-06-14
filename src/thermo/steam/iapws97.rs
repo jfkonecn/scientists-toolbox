@@ -5,6 +5,7 @@ use crate::thermo::steam::iapws97_constants::*;
 use crate::thermo::steam::water_constants::*;
 use crate::thermo::types::*;
 
+#[derive(Debug)]
 enum Iapws97Region {
     Region1,
     Region2,
@@ -13,7 +14,7 @@ enum Iapws97Region {
     Region5,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct PtPoint {
     // Pa
     pub pressure: f64,
@@ -77,6 +78,7 @@ pub enum OutOfRange {
     AboveCriticalPressure,
 }
 
+#[derive(Debug)]
 struct SpecificRegionPoint {
     point: PtPoint,
     tau: f64,
@@ -93,13 +95,13 @@ fn get_sat_pressure(temperature: f64) -> Result<f64, OutOfRange> {
     match temperature {
         t if t > CRITICAL_TEMPERATURE => Result::Err(OutOfRange::AboveCriticalTemperature),
         t => {
-            let sat_temp_ratio = t / 1.0;
+            let sat_temp_ratio = t / 1f64;
             let theta = sat_temp_ratio + (region_4[8].n / (sat_temp_ratio - region_4[9].n));
             let a = f64::powi(theta, 2) + region_4[0].n * theta + region_4[1].n;
             let b = region_4[2].n * f64::powi(theta, 2) + region_4[3].n * theta + region_4[4].n;
             let c = region_4[5].n * f64::powi(theta, 2) + region_4[6].n * theta + region_4[7].n;
             let pressure = f64::powi(
-                (2.0 * a) / (-b + f64::powf(f64::powi(b, 2) - 4.0 * a * c, 0.5)),
+                (2f64 * c) / (-b + f64::powf(f64::powi(b, 2) - 4f64 * a * c, 0.5)),
                 4,
             ) * 1e6;
             Result::Ok(pressure)
@@ -199,9 +201,9 @@ fn get_region_from_pt_point(pt_point: &PtPoint) -> Result<Iapws97Region, OutOfRa
         (_, _) if t > 273.15 + 800.0 => Ok(Iapws97Region::Region5),
         (_, _) if t > 273.15 + 600.0 => Ok(Iapws97Region::Region2),
         (Ok(sat_p), _) if p == sat_p => Ok(Iapws97Region::Region4),
-        (Ok(sat_p), _) if p > sat_p => Ok(Iapws97Region::Region2),
+        (Ok(sat_p), _) if p < sat_p => Ok(Iapws97Region::Region2),
         (Ok(_), _) => Ok(Iapws97Region::Region1),
-        (_, Ok(boundary)) if p > boundary => Ok(Iapws97Region::Region2),
+        (_, Ok(boundary)) if p < boundary => Ok(Iapws97Region::Region2),
         (_, Ok(_)) => Ok(Iapws97Region::Region3),
         (Err(err), _) => Err(err),
     }
@@ -314,6 +316,7 @@ fn gibbs_method(point: &PtPoint) -> PtvEntry {
         gamma_tau_tau,
         gamma_pi_tau,
     };
+    println!("{:?}", specific_region_point);
 
     create_entry_from_region_point(specific_region_point, phase_info)
 }
@@ -326,7 +329,7 @@ fn vapor_method(
     residual_points: &[IjnRegionPoint],
 ) -> PtvEntry {
     let pi = point.pressure / 1.0e6;
-    let mut gamma = f64::log(pi, 10f64);
+    let mut gamma = f64::ln(pi);
     let mut gamma_pi = 1.0 / pi;
     let mut gamma_pi_pi = -1.0 / f64::powi(pi, 2);
     let mut gamma_tau = 0f64;
@@ -381,8 +384,8 @@ fn region3_by_specific_volume(pt_point: &PtPoint, specific_volume: f64) -> PtvEn
     let n1 = region_3_n1.n;
     let delta = density / 322f64;
     let temperature = pt_point.temperature;
-    let mut tau = 647.096 / temperature;
-    let mut phi = n1 * f64::log(delta, 10f64);
+    let tau = 647.096 / temperature;
+    let mut phi = n1 * f64::ln(delta);
     let mut phi_delta = n1 / delta;
     let mut phi_delta_delta = -n1 / f64::powi(delta, 2);
     let mut phi_tau = 0f64;
@@ -403,7 +406,6 @@ fn region3_by_specific_volume(pt_point: &PtPoint, specific_volume: f64) -> PtvEn
 
     let pressure = phi_delta * delta * density * GAS_CONSTANT * temperature;
 
-    let phase_info = PhaseRegion::SupercriticalFluid;
     let internal_energy = tau * phi_tau * GAS_CONSTANT * temperature;
     let enthalpy = (tau * phi_tau + delta * phi_delta) * GAS_CONSTANT * temperature;
     let entropy = (tau * phi_tau - phi) * GAS_CONSTANT;
@@ -437,9 +439,9 @@ fn region3_by_specific_volume(pt_point: &PtPoint, specific_volume: f64) -> PtvEn
 fn region3_method(point: &PtPoint) -> Result<PtvEntry, SteamQueryErr> {
     let f = |x| {
         let entry = region3_by_specific_volume(&point, x);
-        entry.specific_volume - x
+        entry.pressure - point.pressure
     };
-    secant_method(f, 1f64, 0.999, 1e-15)
+    secant_method(f, 1f64 / 500f64, 1f64, 1e-5)
         .map(|x| region3_by_specific_volume(&point, x))
         .map_err(|err| SteamQueryErr::FailedToConverge(err))
 }
@@ -448,6 +450,8 @@ fn get_entry_from_pt_point(
     point: &PtPoint,
     region: Iapws97Region,
 ) -> Result<PtvEntry, SteamQueryErr> {
+    println!("{:?}", point);
+    println!("{:?}", region);
     match region {
         Iapws97Region::Region1 | Iapws97Region::Region4 => Ok(gibbs_method(&point)),
         Iapws97Region::Region2 => Ok(vapor_method(
@@ -459,7 +463,7 @@ fn get_entry_from_pt_point(
         )),
         Iapws97Region::Region3 => region3_method(&point),
         Iapws97Region::Region5 => Ok(vapor_method(
-            100f64 / point.temperature,
+            1000f64 / point.temperature,
             0f64,
             &point,
             region_5_ideal,
@@ -521,8 +525,9 @@ fn iterate_pt_entry_solution(
             if get_prop_value(&liquid_entry) <= target_value
                 && get_prop_value(&vapor_entry) >= target_value =>
         {
-            let liq_frac = (get_prop_value(&vapor_entry) - target_value)
-                / (get_prop_value(&vapor_entry) - get_prop_value(&liquid_entry));
+            let liq_frac = 1f64
+                - (get_prop_value(&vapor_entry) - target_value)
+                    / (get_prop_value(&vapor_entry) - get_prop_value(&liquid_entry));
             interpolate_entry(&liquid_entry, &vapor_entry, liq_frac)
         }
         _ => {
@@ -589,16 +594,25 @@ mod tests {
                     (Ok(expected), Ok(actual)) => {
                         println!("{:?}", expected);
                         println!("{:?}", actual);
-                        assert_approx_eq!(expected.pressure, actual.pressure);
-                        assert_approx_eq!(expected.temperature, actual.temperature);
-                        assert_eq!(expected.phase_region, actual.phase_region);
-                        assert_approx_eq!(expected.internal_energy, actual.internal_energy);
-                        assert_approx_eq!(expected.enthalpy, actual.enthalpy);
-                        assert_approx_eq!(expected.entropy, actual.entropy);
-                        assert_approx_eq!(expected.cv, actual.cv);
-                        assert_approx_eq!(expected.cp, actual.cp);
-                        assert_approx_eq!(expected.speed_of_sound, actual.speed_of_sound);
-                        assert_approx_eq!(expected.specific_volume, actual.specific_volume);
+                        assert_approx_eq!(expected.pressure, actual.pressure, 10f64);
+                        assert_approx_eq!(expected.temperature, actual.temperature, 1f64);
+                        match (expected.phase_region, actual.phase_region) {
+                            (
+                                PhaseRegion::Composite(CompositePhaseRegion::LiquidVapor(exp)),
+                                PhaseRegion::Composite(CompositePhaseRegion::LiquidVapor(act))
+                            ) => {
+                                assert_approx_eq!(exp.get_liquid_frac(), act.get_liquid_frac(), 1e-3);
+                                assert_approx_eq!(exp.get_vapor_frac(), act.get_vapor_frac(), 1e-3);
+                            }
+                            (x, y) => assert_eq!(x, y),
+                        }
+                        assert_approx_eq!(expected.internal_energy, actual.internal_energy, 1f64);
+                        assert_approx_eq!(expected.enthalpy, actual.enthalpy, 150f64);
+                        assert_approx_eq!(expected.entropy, actual.entropy, 150f64);
+                        assert_approx_eq!(expected.cv, actual.cv, 1e-2);
+                        assert_approx_eq!(expected.cp, actual.cp, 1e-2);
+                        assert_approx_eq!(expected.speed_of_sound, actual.speed_of_sound, 1e-2);
+                        assert_approx_eq!(expected.specific_volume, actual.specific_volume, 1e-2);
                     },
                     (x, y) => assert_eq!(x, y),
                 };

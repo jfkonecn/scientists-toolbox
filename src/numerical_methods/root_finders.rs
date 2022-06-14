@@ -23,20 +23,26 @@ pub fn secant_method(
         tries: i64,
         f: impl Fn(f64) -> f64,
         max_iter: i64,
+        tol: f64,
     ) -> Result<f64, RootFinderErr> {
-        let x2 = x1 - y1 * (x1 - x0) / (y1 - y0);
+        // let x2 = x1 - y1 * (x1 - x0) / (y1 - y0);
+        let x2 = if y1.abs() > y0.abs() {
+            (-y0 / y1 * x1 + x0) / (1f64 - y0 / y1)
+        } else {
+            (-y1 / y0 * x0 + x1) / (1f64 - y1 / y0)
+        };
         let y2 = f(x2);
-        if relative_eq!(0.0, y2) {
+        if relative_eq!(0.0, y2, epsilon = tol) {
             Ok(x2)
         } else if tries > max_iter {
             Err(RootFinderErr::MaxIterationsReached)
         } else {
-            solver((x1, y1), (x2, y2), tries + 1, f, max_iter)
+            solver((x1, y1), (x2, y2), tries + 1, f, max_iter, tol)
         }
     }
     let y0 = f(x0);
     let y1 = f(x1);
-    solver((x0, y0), (x1, y1), 0, f, max_iter)
+    solver((x0, y0), (x1, y1), 0, f, max_iter, tol)
 }
 
 #[cfg(test)]
@@ -74,7 +80,7 @@ mod tests {
     fn secant_should_rtn_err_if_cannot_converge() {
         assert_eq!(
             RootFinderErr::MaxIterationsReached,
-            secant_method(|x| x.exp(), 3.0, 5.0, 1e-6).unwrap_err()
+            secant_method(|_| 1f64, 3.0, 5.0, 1e-15).unwrap_err()
         );
     }
 }

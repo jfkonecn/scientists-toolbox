@@ -12,5 +12,6 @@ Cargo.lock
 
 .vscode/
 
-www/index.css
+dist/
+index.css
 node_modules/

@@ -1,21 +1,26 @@
 [tasks.dev]
-command = "wasm-pack"
-args = ["build", "--target", "web", "--out-dir", "./www/lib/", "--no-typescript", "--dev"]
+command = "trunk"
+args = ["build"]
 workspace = false
 
 [tasks.watch-dev]
-command = "wasm-pack"
-args = ["build", "--target", "web", "--out-dir", "./www/lib/", "--no-typescript", "--dev"]
-watch = { watch = ["./src"] }
+command = "trunk"
+args = ["serve"]
+workspace = false
 
 [tasks.release]
-command = "wasm-pack"
-args = ["build", "--target", "web", "--out-dir", "./www/lib/", "--no-typescript", "--release"]
+command = "trunk"
+args = ["build", "--release"]
+workspace = false
 
 [tasks.tailwind-dev]
 command = "npx"
-args = ["tailwindcss", "-c", "./tailwind.config.js", "-o", "./www/index.css"]
+args = ["tailwindcss", "-c", "./tailwind.config.js", "-o", "./index.css"]
+
+[tasks.watch-tailwind-dev]
+command = "npx"
+args = ["tailwindcss", "-c", "./tailwind.config.js", "-o", "./index.css", "--watch"]
 
 [tasks.tailwind-release]
 command = "npx"
-args = ["tailwindcss", "-c", "./tailwind.config.js", "-o", "./www/index.css", "--minify"]
+args = ["tailwindcss", "-c", "./tailwind.config.js", "-o", "./index.css", "--minify"]

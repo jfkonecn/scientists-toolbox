@@ -1,13 +1,21 @@
-use crate::thermo::steam::iapws97::*;
 use yew::prelude::*;
 
 #[function_component(App)]
 pub fn app() -> Html {
-    let _ = get_steam_table_entry(SteamQuery::PtQuery(PtPoint {
-        temperature: 750.0,
-        pressure: 78.309563916917e6,
-    }));
     html! {
-       <p class={classes!("bg-red-100")}>{"Test!"}</p>
+        <>
+            <header class={classes!("bg-sky-100", "h-20")}>
+                <ul>
+                    <li>
+                        <a href="https://github.com/jfkonecn/scientists-toolbox">{"Github"}</a>
+                    </li>
+                </ul>
+            </header>
+            <main class={classes!("bg-white", "min-h-[calc(100vh-theme(spacing.20)-theme(spacing.20))]")}>
+            <p class={classes!("bg-red-100")}>{"Test!"}</p>
+            </main>
+            <footer class={classes!("bg-sky-100", "h-20")}>
+            </footer>
+       </>
     }
 }

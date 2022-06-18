@@ -1,2 +1,2 @@
-mod base_input;
+mod boxed_label;
 pub mod unit_input;

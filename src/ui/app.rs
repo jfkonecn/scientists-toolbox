@@ -1,3 +1,4 @@
+use super::shared::forms::unit_input::*;
 use yew::prelude::*;
 
 #[function_component(App)]
@@ -20,6 +21,7 @@ pub fn app() -> Html {
                 </header>
                 <main class={classes!("bg-white", "min-h-[calc(100vh-theme(spacing.20)-theme(spacing.20))]")}>
                     <p class={classes!("bg-red-100")}>{"Test!"}</p>
+                    <UnitInput/>
                 </main>
                 <footer class={classes!("bg-sky-100", "h-20")}>
                 </footer>

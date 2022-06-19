@@ -1,2 +1,2 @@
 pub mod steam;
-mod types;
+pub mod types;

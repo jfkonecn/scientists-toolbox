@@ -32,17 +32,17 @@ pub fn unit_input(
         }
     });
     html! {
-        <BoxedLabel id={id.clone()} label={label.clone()}>
+        <BoxedLabel id={id.clone()} label={label.clone()} label_type={LabelType::Input}>
             <input
                 type={"number"}
                 id={id.clone()}
                 placeholder={"enter a number"}
-                class={classes!( "px-3", "py-2", "w-[calc(100%-theme(spacing.16))]", "h-full")}
+                class={classes!("inline-block", "px-3", "py-2", "w-[calc(100%-theme(spacing.24))]", "h-full")}
                 oninput={oninput}
                 />
                 <select
-                    id={format!("{}-left-dropdown", id)}
-                    class={classes!("w-16", "h-full", "pl-2", "bg-white")}
+                    id={format!("{}-unit", id)}
+                    class={classes!("inline-block", "w-24", "h-full", "px-3", "py-2", "bg-white")}
                 >
                     <option value={unit.clone()}>{unit}</option>
                 </select>

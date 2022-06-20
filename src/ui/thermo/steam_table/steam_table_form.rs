@@ -1,15 +1,62 @@
+use super::super::super::shared::forms::str_output::*;
 use super::super::super::shared::forms::unit_input::*;
 use super::super::super::shared::forms::unit_output::*;
 use crate::thermo::steam::iapws97::*;
 use crate::thermo::types::*;
 use yew::prelude::*;
 
+impl PhaseRegion {
+    fn to_display_str(&self) -> String {
+        match self {
+            PhaseRegion::SupercriticalFluid => String::from("Supercritical Fluid"),
+            PhaseRegion::Gas => String::from("Gas"),
+            PhaseRegion::NonCritical(NonCriticalPhaseRegion::Vapor) => String::from("Vapor"),
+            PhaseRegion::NonCritical(NonCriticalPhaseRegion::Liquid) => String::from("Liquid"),
+            PhaseRegion::NonCritical(NonCriticalPhaseRegion::Solid) => String::from("Solid"),
+            PhaseRegion::Composite(CompositePhaseRegion::SolidLiquidVapor(x)) => format!(
+                "Solid {}%, Liquid {}%, Vapor {}%",
+                x.get_solid_frac(),
+                x.get_liquid_frac(),
+                x.get_vapor_frac(),
+            ),
+            PhaseRegion::Composite(CompositePhaseRegion::SolidLiquid(x)) => format!(
+                "Solid {}%, Liquid {}%",
+                x.get_solid_frac(),
+                x.get_liquid_frac(),
+            ),
+            PhaseRegion::Composite(CompositePhaseRegion::SolidVapor(x)) => format!(
+                "Solid {}%, Vapor {}%",
+                x.get_solid_frac(),
+                x.get_vapor_frac()
+            ),
+            PhaseRegion::Composite(CompositePhaseRegion::LiquidVapor(x)) => format!(
+                "Liquid {}%, Vapor {}%",
+                x.get_liquid_frac(),
+                x.get_vapor_frac(),
+            ),
+        }
+    }
+}
+
 #[derive(Properties, PartialEq)]
 pub struct SteamTableFormProps {}
 
 #[function_component(SteamTableForm)]
 pub fn steam_table_form(SteamTableFormProps {}: &SteamTableFormProps) -> Html {
-    let entry_opt = use_state(|| -> Option<Result<PtvEntry, SteamQueryErr>> { None });
+    let entry_opt = use_state(|| -> Option<Result<PtvEntry, SteamQueryErr>> {
+        Some(Ok(PtvEntry {
+            temperature: 473.15,
+            pressure: 40e6,
+            phase_region: PhaseRegion::NonCritical(NonCriticalPhaseRegion::Liquid),
+            internal_energy: 825.228016170348e3,
+            enthalpy: 870.124259682489e3,
+            entropy: 2.275752861241e3,
+            cv: 3.292858637199e3,
+            cp: 4.315767590903e3,
+            speed_of_sound: 1457.418351596083,
+            specific_volume: 0.001122406088,
+        }))
+    });
 
     let on_pressure_change = Callback::from(move |val| {
         log::info!("pressure is {:?} Pa", val);
@@ -33,6 +80,53 @@ pub fn steam_table_form(SteamTableFormProps {}: &SteamTableFormProps) -> Html {
                     label={"Temperature"}
                     unit={"K"}
                     value={entry.temperature}
+                />
+                <StrOutput
+                    id={"temperature_output"}
+                    label={"Phase"}
+                    value={entry.phase_region.to_display_str()}
+                />
+                <UnitOutput
+                    id={"internal_energy_output"}
+                    label={"Internal Energy"}
+                    unit={"J/kg"}
+                    value={entry.internal_energy}
+                />
+                <UnitOutput
+                    id={"enthalpy_output"}
+                    label={"Enthalpy"}
+                    unit={"J/kg"}
+                    value={entry.enthalpy}
+                />
+                <UnitOutput
+                    id={"entropy_output"}
+                    label={"Entropy"}
+                    unit={"J/(kg * K)"}
+                    value={entry.entropy}
+                />
+                <UnitOutput
+                    id={"cv_output"}
+                    label={"Isochoric Heat Capacity"}
+                    unit={"J/(kg * K)"}
+                    value={entry.cv}
+                />
+                <UnitOutput
+                    id={"cp_output"}
+                    label={"Isobaric Heat Capacity"}
+                    unit={"J/(kg * K)"}
+                    value={entry.cp}
+                />
+                <UnitOutput
+                    id={"speed_of_sound_output"}
+                    label={"Speed of Sound"}
+                    unit={"m/s"}
+                    value={entry.speed_of_sound}
+                />
+                <UnitOutput
+                    id={"specific_volume_output"}
+                    label={"Specific Volume"}
+                    unit={"m^3/kg"}
+                    value={entry.specific_volume}
                 />
             </fieldset>
         }

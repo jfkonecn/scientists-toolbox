@@ -48,6 +48,14 @@ impl SolidLiquid {
             Err(CompositePhaseRegionErr::FractionsDoNotAddUpToOne)
         }
     }
+
+    pub fn get_solid_frac(&self) -> f64 {
+        self.solid_frac
+    }
+
+    pub fn get_liquid_frac(&self) -> f64 {
+        self.liquid_frac
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -94,6 +102,14 @@ impl SolidVapor {
             Err(CompositePhaseRegionErr::FractionsDoNotAddUpToOne)
         }
     }
+
+    pub fn get_solid_frac(&self) -> f64 {
+        self.solid_frac
+    }
+
+    pub fn get_vapor_frac(&self) -> f64 {
+        self.vapor_frac
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -118,6 +134,18 @@ impl SolidLiquidVapor {
         } else {
             Err(String::from("Fractions must add up to 1"))
         }
+    }
+
+    pub fn get_solid_frac(&self) -> f64 {
+        self.solid_frac
+    }
+
+    pub fn get_liquid_frac(&self) -> f64 {
+        self.liquid_frac
+    }
+
+    pub fn get_vapor_frac(&self) -> f64 {
+        self.vapor_frac
     }
 }
 

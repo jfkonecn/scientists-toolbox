@@ -1,4 +1,4 @@
-use super::output_label::*;
+use super::boxed_label::*;
 use yew::prelude::*;
 
 #[derive(Clone, Debug, Properties, PartialEq)]
@@ -19,19 +19,19 @@ pub fn unit_input(
     }: &UnitOutputProps,
 ) -> Html {
     html! {
-        <OutputLabel id={id.clone()} label={label.clone()}>
+        <BoxedLabel id={id.clone()} label={label.clone()} label_type={LabelType::Output}>
             <output
                 id={id.clone()}
-                class={classes!( "px-3", "py-2", "w-[calc(100%-theme(spacing.16))]", "h-full")}
+                class={classes!("inline-block", "px-3", "py-2", "w-[calc(100%-theme(spacing.24))]", "h-full")}
             >
-                {value.to_string()}
+                {format!("{:.3}", value)}
             </output>
-            <span
-                id={format!("{}-left-dropdown", id)}
-                class={classes!("w-16", "h-full", "pl-2", "bg-white")}
+            <output
+                id={format!("{}-unit", id)}
+                class={classes!("inline-block", "w-24", "h-full", "px-3", "py-2")}
             >
                 {unit}
-            </span>
-        </OutputLabel>
+            </output>
+        </BoxedLabel>
     }
 }

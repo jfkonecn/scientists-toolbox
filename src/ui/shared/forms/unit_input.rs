@@ -1,4 +1,5 @@
 use super::boxed_label::*;
+use super::*;
 use wasm_bindgen::JsCast;
 use web_sys::{EventTarget, HtmlInputElement};
 use yew::prelude::*;

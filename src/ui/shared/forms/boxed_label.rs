@@ -1,3 +1,4 @@
+use super::*;
 use yew::prelude::*;
 
 #[derive(Properties, PartialEq)]
@@ -6,12 +7,6 @@ pub struct BoxedLabelProps {
     pub label_type: LabelType,
     pub id: String,
     pub children: Children,
-}
-
-#[derive(PartialEq)]
-pub enum LabelType {
-    Input,
-    Output,
 }
 
 #[function_component(BoxedLabel)]
@@ -25,7 +20,8 @@ pub fn boxed_label(
 ) -> Html {
     let bg_color = match label_type {
         LabelType::Input => "bg-white",
-        LabelType::Output => "bg-sky-100",
+        LabelType::Output(OutputType::Success) => "bg-sky-100",
+        LabelType::Output(OutputType::Error) => "bg-red-100",
     };
     html! {
         <div class={classes!("relative", "mx-3", "p-1", "mb-3", "mt-8", "h-12",  "w-72", "border-2", "rounded-md", "border-gray-200", bg_color )}>

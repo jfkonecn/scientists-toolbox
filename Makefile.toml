@@ -5,7 +5,7 @@ workspace = false
 
 [tasks.watch-dev]
 command = "trunk"
-args = ["serve"]
+args = ["serve", "--address", "0.0.0.0"]
 workspace = false
 
 [tasks.release]

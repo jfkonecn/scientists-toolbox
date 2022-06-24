@@ -36,6 +36,9 @@ pub fn unit_input(
         <BoxedLabel id={id.clone()} label={label.clone()} label_type={LabelType::Input}>
             <input
                 type={"number"}
+                min="0"
+                inputmode="numeric"
+                pattern="[0-9]*"
                 id={id.clone()}
                 placeholder={"enter a number"}
                 class={classes!("inline-block", "px-3", "py-2", "w-[calc(100%-theme(spacing.24))]", "h-full")}
@@ -43,7 +46,7 @@ pub fn unit_input(
                 />
                 <select
                     id={format!("{}-unit", id)}
-                    class={classes!("inline-block", "w-24", "h-full", "px-3", "py-2", "bg-white")}
+                    class={classes!("inline-block", "w-20", "h-full", "ml-4", "px-3", "py-2", "bg-white")}
                 >
                     <option value={unit.clone()}>{unit}</option>
                 </select>

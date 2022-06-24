@@ -183,20 +183,28 @@ pub fn steam_table_form(SteamTableFormProps {}: &SteamTableFormProps) -> Html {
         //     speed_of_sound: 1457.418351596083,
         //     specific_volume: 0.001122406088,
         // }))
-        Some(Err(SteamQueryErr::OutOfRange(
-            OutOfRange::AboveCriticalPressure,
-        )))
+        // Some(Err(SteamQueryErr::OutOfRange(
+        //     OutOfRange::AboveCriticalPressure,
+        // )))
+        None
     });
+    let pressure_opt = use_state(|| -> Option<f64> { None });
+    let temperature_opt = use_state(|| -> Option<f64> { None });
+
+    let output: Html = entry_to_html(&*entry_opt);
+
+    let form_values = match (*pressure_opt, *temperature_opt) {
+        (Some(pressure), Some(temperature)) => Some((pressure, temperature)),
+        _ => None,
+    };
 
     let on_pressure_change = Callback::from(move |val| {
-        log::info!("pressure is {:?} Pa", val);
+        pressure_opt.set(val);
     });
 
     let on_temperature_change = Callback::from(move |val| {
-        log::info!("temperature is  {:?} K", val);
+        temperature_opt.set(val);
     });
-
-    let output: Html = entry_to_html(&*entry_opt);
 
     html! {
         <form class={classes!(
@@ -229,11 +237,14 @@ pub fn steam_table_form(SteamTableFormProps {}: &SteamTableFormProps) -> Html {
                     )}
                     onclick={move |e: MouseEvent| {
                         e.prevent_default();
-                        let result = get_steam_table_entry(SteamQuery::PtQuery(PtPoint {
-                            pressure: 10e6,
-                            temperature: 300f64,
-                        }));
-                    entry_opt.set(Some(result));
+                        if let Some((pressure, temperature)) = form_values {
+                            let result = get_steam_table_entry(SteamQuery::PtQuery(PtPoint {
+                                pressure,
+                                temperature,
+                            }));
+                            entry_opt.set(Some(result));
+                        }
+
                     }}/>
             </fieldset>
             {output}

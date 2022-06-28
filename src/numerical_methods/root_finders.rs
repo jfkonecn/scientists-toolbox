@@ -1,10 +1,5 @@
+use super::*;
 use approx::relative_eq;
-
-#[derive(Debug, PartialEq)]
-pub enum RootFinderErr {
-    ToleranceBelowZero,
-    MaxIterationsReached,
-}
 
 pub fn secant_method(f: impl Fn(f64) -> f64, x0: f64, tol: f64) -> Result<f64, RootFinderErr> {
     let max_iter = 50;

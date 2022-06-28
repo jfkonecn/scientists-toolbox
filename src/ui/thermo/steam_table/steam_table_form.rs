@@ -2,9 +2,10 @@ use super::super::super::shared::forms::str_output::*;
 use super::super::super::shared::forms::unit_input::*;
 use super::super::super::shared::forms::unit_output::*;
 use super::super::super::shared::forms::*;
-use crate::numerical_methods::root_finders::*;
-use crate::thermo::steam::iapws97::*;
-use crate::thermo::types::*;
+use crate::numerical_methods::*;
+use crate::thermo::steam::*;
+use crate::thermo::*;
+use crate::ui::thermo::steam_table::steam_table_form::iapws97::get_steam_table_entry;
 use yew::prelude::*;
 
 impl PhaseRegion {

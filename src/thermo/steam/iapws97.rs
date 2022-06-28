@@ -1,9 +1,8 @@
 // https://github.com/jfkonecn/thermo/blob/feature/issue-42/thermo/steam_properties.py
+use super::*;
 use crate::numerical_methods::root_finders::secant_method;
-use crate::numerical_methods::root_finders::RootFinderErr;
-use crate::thermo::steam::iapws97_constants::*;
+use crate::thermo::steam::iapws97_constants::{IjnRegionPoint, JnRegionPoint};
 use crate::thermo::steam::water_constants::*;
-use crate::thermo::types::*;
 
 #[derive(Debug)]
 enum Iapws97Region {
@@ -12,72 +11,6 @@ enum Iapws97Region {
     Region3,
     Region4,
     Region5,
-}
-
-#[derive(Copy, Clone, Debug)]
-pub struct PtPoint {
-    // Pa
-    pub pressure: f64,
-    // K
-    pub temperature: f64,
-}
-
-#[derive(Debug, PartialEq)]
-pub enum SteamNonCriticalPhaseRegion {
-    // Pressure is less than both the sublimation and vaporization curve and is below the critical temperature
-    Vapor,
-    // Pressure is above the vaporization curve and the temperature is greater than the fusion curve and less than the critical temperature
-    Liquid,
-}
-
-#[derive(Debug)]
-pub enum SatQuery {
-    SatTQuery {
-        // K
-        temperature: f64,
-        phase_region: SteamNonCriticalPhaseRegion,
-    },
-    SatPQuery {
-        // Pa
-        pressure: f64,
-        phase_region: SteamNonCriticalPhaseRegion,
-    },
-}
-
-#[derive(Debug)]
-pub enum SteamQuery {
-    PtQuery(PtPoint),
-    SatQuery(SatQuery),
-    EntropyPQuery {
-        // J/(kg * K)
-        entropy: f64,
-        // Pa
-        pressure: f64,
-    },
-    EnthalpyPQuery {
-        // J/kg
-        enthalpy: f64,
-        // Pa
-        pressure: f64,
-    },
-}
-
-#[derive(Debug, PartialEq)]
-pub enum SteamQueryErr {
-    OutOfRange(OutOfRange),
-    CompositePhaseRegionErr(CompositePhaseRegionErr),
-    FailedToConverge(RootFinderErr),
-}
-
-#[derive(Debug, PartialEq)]
-pub enum OutOfRange {
-    TemperatureLow,
-    TemperatureHigh,
-    PressureLow,
-    PressureHigh,
-    AboveCriticalTemperature,
-    BelowCriticalTemperature,
-    AboveCriticalPressure,
 }
 
 #[derive(Debug)]
@@ -98,10 +31,18 @@ fn get_sat_pressure(temperature: f64) -> Result<f64, OutOfRange> {
         t if t > CRITICAL_TEMPERATURE => Result::Err(OutOfRange::AboveCriticalTemperature),
         t => {
             let sat_temp_ratio = t / 1f64;
-            let theta = sat_temp_ratio + (REGION_4[8].n / (sat_temp_ratio - REGION_4[9].n));
-            let a = f64::powi(theta, 2) + REGION_4[0].n * theta + REGION_4[1].n;
-            let b = REGION_4[2].n * f64::powi(theta, 2) + REGION_4[3].n * theta + REGION_4[4].n;
-            let c = REGION_4[5].n * f64::powi(theta, 2) + REGION_4[6].n * theta + REGION_4[7].n;
+            let theta = sat_temp_ratio
+                + (iapws97_constants::REGION_4[8].n
+                    / (sat_temp_ratio - iapws97_constants::REGION_4[9].n));
+            let a = f64::powi(theta, 2)
+                + iapws97_constants::REGION_4[0].n * theta
+                + iapws97_constants::REGION_4[1].n;
+            let b = iapws97_constants::REGION_4[2].n * f64::powi(theta, 2)
+                + iapws97_constants::REGION_4[3].n * theta
+                + iapws97_constants::REGION_4[4].n;
+            let c = iapws97_constants::REGION_4[5].n * f64::powi(theta, 2)
+                + iapws97_constants::REGION_4[6].n * theta
+                + iapws97_constants::REGION_4[7].n;
             let pressure = f64::powi(
                 (2f64 * c) / (-b + f64::powf(f64::powi(b, 2) - 4f64 * a * c, 0.5)),
                 4,
@@ -116,13 +57,22 @@ fn get_sat_temperature(pressure: f64) -> Result<f64, OutOfRange> {
         p if p > CRITICAL_PRESSURE => Err(OutOfRange::AboveCriticalPressure),
         p => {
             let beta = f64::powf(p / 1e6, 0.25);
-            let e = f64::powi(beta, 2) + REGION_4[2].n * beta + REGION_4[5].n;
-            let f = REGION_4[0].n * f64::powi(beta, 2) + REGION_4[3].n * beta + REGION_4[6].n;
-            let g = REGION_4[1].n * f64::powi(beta, 2) + REGION_4[4].n * beta + REGION_4[7].n;
+            let e = f64::powi(beta, 2)
+                + iapws97_constants::REGION_4[2].n * beta
+                + iapws97_constants::REGION_4[5].n;
+            let f = iapws97_constants::REGION_4[0].n * f64::powi(beta, 2)
+                + iapws97_constants::REGION_4[3].n * beta
+                + iapws97_constants::REGION_4[6].n;
+            let g = iapws97_constants::REGION_4[1].n * f64::powi(beta, 2)
+                + iapws97_constants::REGION_4[4].n * beta
+                + iapws97_constants::REGION_4[7].n;
             let d = (2.0 * g) / (-f - f64::powf(f64::powi(f, 2) - 4.0 * e * g, 0.5));
-            let temperature = (REGION_4[9].n + d
+            let temperature = (iapws97_constants::REGION_4[9].n + d
                 - f64::powf(
-                    f64::powi(REGION_4[9].n + d, 2) - 4.0 * (REGION_4[8].n + REGION_4[9].n * d),
+                    f64::powi(iapws97_constants::REGION_4[9].n + d, 2)
+                        - 4.0
+                            * (iapws97_constants::REGION_4[8].n
+                                + iapws97_constants::REGION_4[9].n * d),
                     0.5,
                 ))
                 / 2.0;
@@ -136,9 +86,9 @@ fn get_boundary_34_pressure(temperature: f64) -> Result<f64, OutOfRange> {
         t if t < CRITICAL_TEMPERATURE => Err(OutOfRange::BelowCriticalTemperature),
         t => {
             let theta = t / 1.0;
-            let pressure = (BOUNDARY_34[0].n
-                + BOUNDARY_34[1].n * theta
-                + BOUNDARY_34[2].n * f64::powi(theta, 2))
+            let pressure = (iapws97_constants::BOUNDARY_34[0].n
+                + iapws97_constants::BOUNDARY_34[1].n * theta
+                + iapws97_constants::BOUNDARY_34[2].n * f64::powi(theta, 2))
                 * 1e6;
             Ok(pressure)
         }
@@ -292,7 +242,7 @@ fn gibbs_method(point: &PtPoint) -> PtvEntry {
     let mut gamma_tau_tau = 0f64;
     let mut gamma_pi_tau = 0f64;
     let phase_info = PhaseRegion::NonCritical(NonCriticalPhaseRegion::Liquid);
-    for region_point in REGION_1_AND_4.iter() {
+    for region_point in iapws97_constants::REGION_1_AND_4.iter() {
         let n = region_point.n;
         let i = region_point.i;
         let j = region_point.j;
@@ -382,7 +332,7 @@ fn vapor_method(
 
 fn region3_by_specific_volume(pt_point: &PtPoint, specific_volume: f64) -> PtvEntry {
     let density = 1f64 / specific_volume;
-    let n1 = REGION_3_N1.n;
+    let n1 = iapws97_constants::REGION_3_N1.n;
     let delta = density / 322f64;
     let temperature = pt_point.temperature;
     let tau = 647.096 / temperature;
@@ -393,7 +343,7 @@ fn region3_by_specific_volume(pt_point: &PtPoint, specific_volume: f64) -> PtvEn
     let mut phi_tau_tau = 0f64;
     let mut phi_delta_tau = 0f64;
 
-    for region_point in REGION_3.iter() {
+    for region_point in iapws97_constants::REGION_3.iter() {
         let n = region_point.n;
         let i = region_point.i;
         let j = region_point.j;
@@ -457,16 +407,16 @@ fn get_entry_from_pt_point(
             540f64 / point.temperature,
             0.5,
             &point,
-            REGION_2_IDEAL,
-            REGION_2_RESIDUAL,
+            iapws97_constants::REGION_2_IDEAL,
+            iapws97_constants::REGION_2_RESIDUAL,
         )),
         Iapws97Region::Region3 => region3_method(&point),
         Iapws97Region::Region5 => Ok(vapor_method(
             1000f64 / point.temperature,
             0f64,
             &point,
-            REGION_5_IDEAL,
-            REGION_5_RESIDUAL,
+            iapws97_constants::REGION_5_IDEAL,
+            iapws97_constants::REGION_5_RESIDUAL,
         )),
     }
 }

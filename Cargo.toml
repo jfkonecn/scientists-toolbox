@@ -16,3 +16,5 @@ assert_approx_eq = "1.1.0"
 web-sys = "0.3.58"
 wasm-logger = "0.2.0"
 log = "0.4.6"
+form_maker = { path = "./form_maker" }
+form_maker_derive = { path = "./form_maker/form_maker_derive" }

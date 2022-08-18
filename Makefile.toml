@@ -1,24 +1,14 @@
-[tasks.format]
-install_crate = "rustfmt"
-command = "cargo"
-args = ["fmt", "--", "--emit=files"]
-
-[tasks.check-format]
-install_crate = "rustfmt"
-command = "cargo"
-args = ["fmt", "--all", "--", "--check"]
-
-[tasks.app-build-dev]
+[tasks.dev]
 command = "trunk"
 args = ["build"]
 workspace = false
 
-[tasks.watch-serve-dev]
+[tasks.watch-dev]
 command = "trunk"
 args = ["serve", "--address", "0.0.0.0"]
 workspace = false
 
-[tasks.app-build-release]
+[tasks.release]
 command = "trunk"
 args = ["build", "--release"]
 workspace = false
@@ -34,85 +24,3 @@ args = ["tailwindcss", "-c", "./tailwind.config.js", "-o", "./index.css", "--wat
 [tasks.tailwind-release]
 command = "npx"
 args = ["tailwindcss", "-c", "./tailwind.config.js", "-o", "./index.css", "--minify"]
-
-[tasks.watch-form-maker-dev]
-command = "cargo"
-args = ["build", "--manifest-path=form_maker/Cargo.toml"]
-watch = { ignore_pattern = "form_maker/form_maker_derive/*", watch = ["./form_maker/"] }
-
-[tasks.form-maker-dev]
-command = "cargo"
-args = ["build", "--manifest-path=form_maker/Cargo.toml"]
-
-[tasks.form-maker-release]
-command = "cargo"
-args = ["build", "--manifest-path=form_maker/Cargo.toml", "--release"]
-
-[tasks.watch-form-maker-derive-dev]
-command = "cargo"
-args = ["build", "--manifest-path=form_maker/Cargo.toml"]
-watch = { watch = ["./form_maker/form_maker_derive/"] }
-
-[tasks.form-maker-derive-dev]
-command = "cargo"
-args = ["build", "--manifest-path=form_maker/Cargo.toml"]
-
-[tasks.form-maker-derive-release]
-command = "cargo"
-args = ["build", "--manifest-path=form_maker/Cargo.toml", "--release"]
-
-[tasks.watch-marcos-dev]
-run_task = { name = [
-    "watch-form-maker-dev", 
-    "watch-form-maker-derive-dev"
-    ], parallel = true }
-
-[tasks.test-dev]
-command = "cargo"
-args = ["test"]
-
-[tasks.watch-test-dev]
-command = "cargo"
-args = ["test"]
-watch = true
-
-[tasks.test-release]
-command = "cargo"
-args = ["test", "--release"]
-
-[tasks.watch]
-run_task = { name = [
-    "watch-serve-dev", 
-    "watch-tailwind-dev", 
-    "watch-marcos-dev",
-    "watch-test-dev"
-    ], parallel = true }
-
-[tasks.watch-html-tests]
-command = "cargo"
-args = ["test", "should_create_correct_form", "--", "--show-output"]
-watch = true
-dependencies = [
-    "form-maker-dev", 
-    "form-maker-derive-dev"
-]
-
-[tasks.dev]
-dependencies = [
-    "format",
-    "form-maker-dev", 
-    "form-maker-derive-dev",
-    "tailwind-dev",
-    "app-build-dev",
-    "test-dev"
-]
-
-[tasks.release]
-dependencies = [
-    "check-format",
-    "form-maker-release", 
-    "form-maker-derive-release",
-    "tailwind-release",
-    "app-build-release",
-    "test-release"
-]

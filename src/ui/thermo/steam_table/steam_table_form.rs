@@ -8,39 +8,6 @@ use crate::thermo::*;
 use crate::ui::thermo::steam_table::steam_table_form::iapws97::get_steam_table_entry;
 use yew::prelude::*;
 
-impl PhaseRegion {
-    fn to_display_str(&self) -> String {
-        match self {
-            PhaseRegion::SupercriticalFluid => String::from("Supercritical Fluid"),
-            PhaseRegion::Gas => String::from("Gas"),
-            PhaseRegion::NonCritical(NonCriticalPhaseRegion::Vapor) => String::from("Vapor"),
-            PhaseRegion::NonCritical(NonCriticalPhaseRegion::Liquid) => String::from("Liquid"),
-            PhaseRegion::NonCritical(NonCriticalPhaseRegion::Solid) => String::from("Solid"),
-            PhaseRegion::Composite(CompositePhaseRegion::SolidLiquidVapor(x)) => format!(
-                "Solid {}%, Liquid {}%, Vapor {}%",
-                x.get_solid_frac(),
-                x.get_liquid_frac(),
-                x.get_vapor_frac(),
-            ),
-            PhaseRegion::Composite(CompositePhaseRegion::SolidLiquid(x)) => format!(
-                "Solid {}%, Liquid {}%",
-                x.get_solid_frac(),
-                x.get_liquid_frac(),
-            ),
-            PhaseRegion::Composite(CompositePhaseRegion::SolidVapor(x)) => format!(
-                "Solid {}%, Vapor {}%",
-                x.get_solid_frac(),
-                x.get_vapor_frac()
-            ),
-            PhaseRegion::Composite(CompositePhaseRegion::LiquidVapor(x)) => format!(
-                "Liquid {}%, Vapor {}%",
-                x.get_liquid_frac(),
-                x.get_vapor_frac(),
-            ),
-        }
-    }
-}
-
 fn entry_to_html(entry_opt: &Option<Result<PtvEntry, SteamQueryErr>>) -> Html {
     match entry_opt {
         Some(Ok(entry)) => {
@@ -61,7 +28,7 @@ fn entry_to_html(entry_opt: &Option<Result<PtvEntry, SteamQueryErr>>) -> Html {
                     <StrOutput
                         id={"temperature_output"}
                         label={"Phase"}
-                        value={entry.phase_region.to_display_str()}
+                        value={entry.phase_region.to_string()}
                         output_type={OutputType::Success}
                     />
                     <UnitOutput

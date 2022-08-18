@@ -1,3 +1,5 @@
+use std::fmt;
+
 pub mod steam;
 
 #[derive(Debug, PartialEq)]
@@ -7,6 +9,43 @@ pub enum PhaseRegion {
     Gas,
     NonCritical(NonCriticalPhaseRegion),
     Composite(CompositePhaseRegion),
+}
+
+impl fmt::Display for PhaseRegion {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            PhaseRegion::SupercriticalFluid => write!(f, "Supercritical Fluid"),
+            PhaseRegion::Gas => write!(f, "Gas"),
+            PhaseRegion::NonCritical(NonCriticalPhaseRegion::Vapor) => write!(f, "Vapor"),
+            PhaseRegion::NonCritical(NonCriticalPhaseRegion::Liquid) => write!(f, "Liquid"),
+            PhaseRegion::NonCritical(NonCriticalPhaseRegion::Solid) => write!(f, "Solid"),
+            PhaseRegion::Composite(CompositePhaseRegion::SolidLiquidVapor(x)) => write!(
+                f,
+                "Solid {}%, Liquid {}%, Vapor {}%",
+                x.get_solid_frac(),
+                x.get_liquid_frac(),
+                x.get_vapor_frac(),
+            ),
+            PhaseRegion::Composite(CompositePhaseRegion::SolidLiquid(x)) => write!(
+                f,
+                "Solid {}%, Liquid {}%",
+                x.get_solid_frac(),
+                x.get_liquid_frac(),
+            ),
+            PhaseRegion::Composite(CompositePhaseRegion::SolidVapor(x)) => write!(
+                f,
+                "Solid {}%, Vapor {}%",
+                x.get_solid_frac(),
+                x.get_vapor_frac()
+            ),
+            PhaseRegion::Composite(CompositePhaseRegion::LiquidVapor(x)) => write!(
+                f,
+                "Liquid {}%, Vapor {}%",
+                x.get_liquid_frac(),
+                x.get_vapor_frac(),
+            ),
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]

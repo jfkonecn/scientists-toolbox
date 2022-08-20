@@ -1,3 +1,6 @@
+use std::fmt::Display;
+
+use super::super::super::shared::forms::select_input::*;
 use super::super::super::shared::forms::str_output::*;
 use super::super::super::shared::forms::unit_input::*;
 use super::super::super::shared::forms::unit_output::*;
@@ -5,6 +8,7 @@ use super::super::super::shared::forms::*;
 use crate::numerical_methods::*;
 use crate::thermo::steam::*;
 use crate::thermo::*;
+use crate::ui::js_bindings::console_log;
 use crate::ui::thermo::steam_table::steam_table_form::iapws97::get_steam_table_entry;
 use yew::prelude::*;
 
@@ -133,6 +137,92 @@ fn entry_to_html(entry_opt: &Option<Result<PtvEntry, SteamQueryErr>>) -> Html {
     }
 }
 
+#[derive(Debug, PartialEq, Copy, Clone)]
+enum SteamQueryType {
+    PtQuery,
+    SatQuery,
+    EntropyPQuery,
+    EnthalpyPQuery,
+}
+
+impl TryFrom<String> for SteamQueryType {
+    type Error = String;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        match value.as_str() {
+            "PtQuery" => Ok(SteamQueryType::PtQuery),
+            "SatQuery" => Ok(SteamQueryType::SatQuery),
+            "EntropyPQuery" => Ok(SteamQueryType::EntropyPQuery),
+            "EnthalpyPQuery" => Ok(SteamQueryType::EnthalpyPQuery),
+            _ => Err(format!("Unknown Query \"{}\"", value).to_owned()),
+        }
+    }
+}
+
+impl Into<String> for SteamQueryType {
+    fn into(self) -> String {
+        match self {
+            SteamQueryType::PtQuery => "PtQuery".to_owned(),
+            SteamQueryType::SatQuery => "SatQuery".to_owned(),
+            SteamQueryType::EntropyPQuery => "EntropyPQuery".to_owned(),
+            SteamQueryType::EnthalpyPQuery => "EnthalpyPQuery".to_owned(),
+        }
+    }
+}
+
+impl Display for SteamQueryType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                SteamQueryType::PtQuery => "Pressure Temperature",
+                SteamQueryType::EnthalpyPQuery => "Enthalpy and Pressure",
+                SteamQueryType::EntropyPQuery => "Entropy and Pressure",
+                SteamQueryType::SatQuery => "Saturated Steam",
+            }
+        )
+    }
+}
+
+#[derive(Properties, PartialEq)]
+struct SteamTableInputProps {}
+
+#[function_component(SteamTableInput)]
+fn steam_table_input(SteamTableInputProps {}: &SteamTableInputProps) -> Html {
+    let query_type_opt = use_state(|| -> Option<SteamQueryType> { Some(SteamQueryType::PtQuery) });
+    let pressure_opt = use_state(|| -> Option<f64> { None });
+    let temperature_opt = use_state(|| -> Option<f64> { None });
+    let on_pressure_change = Callback::from(move |val| {
+        pressure_opt.set(val);
+    });
+
+    let on_temperature_change = Callback::from(move |val| {
+        temperature_opt.set(val);
+    });
+    let query_value = *query_type_opt.clone();
+    html! {
+        <>
+        <SelectInput<SteamQueryType>
+            id="query_type"
+            label="Query Type"
+            onchange={Callback::from(move |x: Option<SteamQueryType>| {
+                query_type_opt.set(x.clone());
+            })}
+            value={query_value}
+            options={vec![
+                SteamQueryType::PtQuery,
+                SteamQueryType::EnthalpyPQuery,
+                SteamQueryType::EntropyPQuery,
+                SteamQueryType::SatQuery,
+                ]}
+        />
+                <UnitInput id={"pressure"} label={"Pressure"} unit={"Pa"} onchange={on_pressure_change} />
+                <UnitInput id={"temperature"} label={"Temperature"} unit={"K"} onchange={on_temperature_change}/>
+        </>
+    }
+}
+
 #[derive(Properties, PartialEq)]
 pub struct SteamTableFormProps {}
 
@@ -188,6 +278,7 @@ pub fn steam_table_form(SteamTableFormProps {}: &SteamTableFormProps) -> Html {
                 "[&>*]:place-items-center",
             )}>
             <fieldset class={classes!("grid", "grid-cols-1", "md:grid-cols-2", "lg:grid-cols-3")}>
+                <SteamTableInput/>
                 <UnitInput id={"pressure"} label={"Pressure"} unit={"Pa"} onchange={on_pressure_change} />
                 <UnitInput id={"temperature"} label={"Temperature"} unit={"K"} onchange={on_temperature_change}/>
             </fieldset>

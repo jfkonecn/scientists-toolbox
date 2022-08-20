@@ -13,6 +13,14 @@ yew = "0.19.3"
 yew-router = "0.16.0"
 approx = "0.5.1"
 assert_approx_eq = "1.1.0"
-web-sys = "0.3.58"
+web-sys = { version = "0.3.58", features = [
+    "Document",
+    "Element",
+    "EventTarget",
+    "HtmlElement",
+    "HtmlInputElement",
+    "HtmlSelectElement",
+    "DomRect",
+] }
 wasm-logger = "0.2.0"
 log = "0.4.6"

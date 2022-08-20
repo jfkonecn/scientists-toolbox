@@ -140,7 +140,8 @@ fn entry_to_html(entry_opt: &Option<Result<PtvEntry, SteamQueryErr>>) -> Html {
 #[derive(Debug, PartialEq, Copy, Clone)]
 enum SteamQueryType {
     PtQuery,
-    SatQuery,
+    SatTQuery,
+    SatPQuery,
     EntropyPQuery,
     EnthalpyPQuery,
 }
@@ -151,7 +152,8 @@ impl TryFrom<String> for SteamQueryType {
     fn try_from(value: String) -> Result<Self, Self::Error> {
         match value.as_str() {
             "PtQuery" => Ok(SteamQueryType::PtQuery),
-            "SatQuery" => Ok(SteamQueryType::SatQuery),
+            "SatPQuery" => Ok(SteamQueryType::SatPQuery),
+            "SatTQuery" => Ok(SteamQueryType::SatTQuery),
             "EntropyPQuery" => Ok(SteamQueryType::EntropyPQuery),
             "EnthalpyPQuery" => Ok(SteamQueryType::EnthalpyPQuery),
             _ => Err(format!("Unknown Query \"{}\"", value).to_owned()),
@@ -163,7 +165,8 @@ impl Into<String> for SteamQueryType {
     fn into(self) -> String {
         match self {
             SteamQueryType::PtQuery => "PtQuery".to_owned(),
-            SteamQueryType::SatQuery => "SatQuery".to_owned(),
+            SteamQueryType::SatPQuery => "SatPQuery".to_owned(),
+            SteamQueryType::SatTQuery => "SatTQuery".to_owned(),
             SteamQueryType::EntropyPQuery => "EntropyPQuery".to_owned(),
             SteamQueryType::EnthalpyPQuery => "EnthalpyPQuery".to_owned(),
         }
@@ -179,7 +182,8 @@ impl Display for SteamQueryType {
                 SteamQueryType::PtQuery => "Pressure Temperature",
                 SteamQueryType::EnthalpyPQuery => "Enthalpy and Pressure",
                 SteamQueryType::EntropyPQuery => "Entropy and Pressure",
-                SteamQueryType::SatQuery => "Saturated Steam",
+                SteamQueryType::SatTQuery => "Saturated Temperature Steam",
+                SteamQueryType::SatPQuery => "Saturated Pressure Steam",
             }
         )
     }
@@ -191,18 +195,30 @@ struct SteamTableInputProps {}
 #[function_component(SteamTableInput)]
 fn steam_table_input(SteamTableInputProps {}: &SteamTableInputProps) -> Html {
     let query_type_opt = use_state(|| -> Option<SteamQueryType> { Some(SteamQueryType::PtQuery) });
+
     let pressure_opt = use_state(|| -> Option<f64> { None });
-    let temperature_opt = use_state(|| -> Option<f64> { None });
     let on_pressure_change = Callback::from(move |val| {
         pressure_opt.set(val);
     });
 
+    let temperature_opt = use_state(|| -> Option<f64> { None });
     let on_temperature_change = Callback::from(move |val| {
         temperature_opt.set(val);
     });
+
+    let entropy_opt = use_state(|| -> Option<f64> { None });
+    let on_entropy_change = Callback::from(move |val| {
+        entropy_opt.set(val);
+    });
+
+    let enthalpy_opt = use_state(|| -> Option<f64> { None });
+    let on_enthalpy_change = Callback::from(move |val| {
+        enthalpy_opt.set(val);
+    });
+
     let query_value = *query_type_opt.clone();
     html! {
-        <>
+    <>
         <SelectInput<SteamQueryType>
             id="query_type"
             label="Query Type"
@@ -214,12 +230,86 @@ fn steam_table_input(SteamTableInputProps {}: &SteamTableInputProps) -> Html {
                 SteamQueryType::PtQuery,
                 SteamQueryType::EnthalpyPQuery,
                 SteamQueryType::EntropyPQuery,
-                SteamQueryType::SatQuery,
+                SteamQueryType::SatTQuery,
+                SteamQueryType::SatPQuery,
                 ]}
         />
-                <UnitInput id={"pressure"} label={"Pressure"} unit={"Pa"} onchange={on_pressure_change} />
-                <UnitInput id={"temperature"} label={"Temperature"} unit={"K"} onchange={on_temperature_change}/>
-        </>
+        {
+        match query_value {
+            Some(SteamQueryType::PtQuery)
+            | Some(SteamQueryType::SatPQuery)
+            | Some(SteamQueryType::EnthalpyPQuery)
+            | Some(SteamQueryType::EntropyPQuery) => {
+                    html! {
+        <UnitInput id={"pressure"} label={"Pressure"} unit={"Pa"} onchange={on_pressure_change} />
+                    }
+            },
+            Some(SteamQueryType::SatTQuery)
+            | None => {
+                    html! {
+                        <></>
+                    }
+            },
+        }
+        }
+        {
+        match query_value {
+            Some(SteamQueryType::PtQuery)
+            | Some(SteamQueryType::SatTQuery)
+             => {
+                    html! {
+        <UnitInput id={"temperature"} label={"Temperature"} unit={"K"} onchange={on_temperature_change}/>
+                    }
+            },
+            Some(SteamQueryType::SatPQuery)
+            | Some(SteamQueryType::EnthalpyPQuery)
+            | Some(SteamQueryType::EntropyPQuery)
+            | None => {
+                    html! {
+                        <></>
+                    }
+            },
+        }
+        }
+        {
+        match query_value {
+            Some(SteamQueryType::EnthalpyPQuery)
+             => {
+                    html! {
+        <UnitInput id={"enthalpy"} label={"Enthalpy"} unit={"J/kg"} onchange={on_enthalpy_change}/>
+                    }
+            },
+            Some(SteamQueryType::SatPQuery)
+            | Some(SteamQueryType::SatTQuery)
+            | Some(SteamQueryType::PtQuery)
+            | Some(SteamQueryType::EntropyPQuery)
+            | None => {
+                    html! {
+                        <></>
+                    }
+            },
+        }
+        }
+        {
+        match query_value {
+            Some(SteamQueryType::EntropyPQuery)
+             => {
+                    html! {
+        <UnitInput id={"entropy"} label={"Entropy"} unit={"J/(kg * K)"} onchange={on_entropy_change}/>
+                    }
+            },
+            Some(SteamQueryType::SatPQuery)
+            | Some(SteamQueryType::SatTQuery)
+            | Some(SteamQueryType::PtQuery)
+            | Some(SteamQueryType::EnthalpyPQuery)
+            | None => {
+                    html! {
+                        <></>
+                    }
+            },
+        }
+        }
+    </>
     }
 }
 

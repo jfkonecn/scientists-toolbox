@@ -1,5 +1,58 @@
 use super::thermo::steam_table::steam_table_form::*;
 use yew::prelude::*;
+use yew_router::prelude::*;
+
+#[derive(Clone, Routable, PartialEq)]
+enum MainRoute {
+    #[at("/")]
+    Home,
+    #[at("/Thermo")]
+    ThermoRoot,
+    #[at("/Thermo/*")]
+    Thermo,
+    #[not_found]
+    #[at("/*")]
+    NotFound,
+}
+
+#[derive(Clone, Routable, PartialEq)]
+enum ThermoRoute {
+    #[at("/Thermo/SteamTable")]
+    SteamTable,
+    #[not_found]
+    #[at("/*")]
+    NotFound,
+}
+#[function_component(NotFound)]
+fn not_found() -> Html {
+    html! {
+        <h1>{"404 Page Not Found"}</h1>
+    }
+}
+fn switch_thermo(route: &ThermoRoute) -> Html {
+    match route {
+        ThermoRoute::SteamTable => html! {
+            <SteamTableForm />
+        },
+        ThermoRoute::NotFound => html! {
+            <NotFound/>
+        },
+    }
+}
+
+fn switch_main(route: &MainRoute) -> Html {
+    match route {
+        MainRoute::Home => html! {
+            <h1>{"Home"}</h1>
+        },
+        MainRoute::ThermoRoot | MainRoute::Thermo => html! {
+            <Switch<ThermoRoute> render={Switch::render(switch_thermo)} />
+        },
+        MainRoute::NotFound => html! {
+            <NotFound/>
+        },
+    }
+}
 
 #[function_component(App)]
 pub fn app() -> Html {
@@ -9,18 +62,22 @@ pub fn app() -> Html {
                 <header class={classes!("bg-sky-100","flex", "items-center", "justify-center", "h-20", "p-10")}>
                     <ul class={classes!("flex", "items-center", "h-full")}>
                         <li>
-                            <a class={classes!("hover:underline")} href="/">{"Scientist's Toolbox"}</a>
+                            <Link<MainRoute> classes={classes!("hover:underline")} to={MainRoute::Home}>
+                                {"Scientist's Toolbox"}
+                            </Link<MainRoute>>
                         </li>
                     </ul>
                     <div class={classes!("flex-grow")}></div>
                     <ul class={classes!("flex", "items-center", "h-full")}>
                         <li>
-                            <a class={classes!("hover:underline")} href="https://github.com/jfkonecn/scientists-toolbox">{"Github"}</a>
+                            <a class={classes!("hover:underline")} target="_blank" href="https://github.com/jfkonecn/scientists-toolbox">{"Github"}</a>
                         </li>
                     </ul>
                 </header>
                 <main class={classes!("bg-white", "min-h-[calc(100vh-theme(spacing.20)-theme(spacing.20))]")}>
-                    <SteamTableForm />
+                    <BrowserRouter>
+                        <Switch<MainRoute> render={Switch::render(switch_main)} />
+                    </BrowserRouter>
                 </main>
                 <footer class={classes!("bg-sky-100", "h-20")}>
                 </footer>

@@ -21,26 +21,26 @@ impl fmt::Display for PhaseRegion {
             PhaseRegion::NonCritical(NonCriticalPhaseRegion::Solid) => write!(f, "Solid"),
             PhaseRegion::Composite(CompositePhaseRegion::SolidLiquidVapor(x)) => write!(
                 f,
-                "Solid {}%, Liquid {}%, Vapor {}%",
+                "Solid {:.2}%, Liquid {:.2}%, Vapor {:.2}%",
                 x.get_solid_frac(),
                 x.get_liquid_frac(),
                 x.get_vapor_frac(),
             ),
             PhaseRegion::Composite(CompositePhaseRegion::SolidLiquid(x)) => write!(
                 f,
-                "Solid {}%, Liquid {}%",
+                "Solid {:.2}%, Liquid {:.2}%",
                 x.get_solid_frac(),
                 x.get_liquid_frac(),
             ),
             PhaseRegion::Composite(CompositePhaseRegion::SolidVapor(x)) => write!(
                 f,
-                "Solid {}%, Vapor {}%",
+                "Solid {:.2}%, Vapor {:.2}%",
                 x.get_solid_frac(),
                 x.get_vapor_frac()
             ),
             PhaseRegion::Composite(CompositePhaseRegion::LiquidVapor(x)) => write!(
                 f,
-                "Liquid {}%, Vapor {}%",
+                "Liquid {:.2}%, Vapor {:.2}%",
                 x.get_liquid_frac(),
                 x.get_vapor_frac(),
             ),

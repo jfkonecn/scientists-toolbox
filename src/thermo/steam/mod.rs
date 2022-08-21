@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::numerical_methods::*;
 use crate::thermo::*;
 
@@ -5,7 +7,7 @@ pub mod iapws97;
 mod iapws97_constants;
 mod water_constants;
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, PartialEq, Clone, Debug)]
 pub struct PtPoint {
     // Pa
     pub pressure: f64,
@@ -13,7 +15,7 @@ pub struct PtPoint {
     pub temperature: f64,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum SteamNonCriticalPhaseRegion {
     // Pressure is less than both the sublimation and vaporization curve and is below the critical temperature
     Vapor,
@@ -21,7 +23,41 @@ pub enum SteamNonCriticalPhaseRegion {
     Liquid,
 }
 
-#[derive(Debug)]
+impl TryFrom<String> for SteamNonCriticalPhaseRegion {
+    type Error = String;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        match value.as_str() {
+            "Vapor" => Ok(SteamNonCriticalPhaseRegion::Vapor),
+            "Liquid" => Ok(SteamNonCriticalPhaseRegion::Liquid),
+            _ => Err(format!("Unknown Phase \"{}\"", value).to_owned()),
+        }
+    }
+}
+
+impl Into<String> for SteamNonCriticalPhaseRegion {
+    fn into(self) -> String {
+        match self {
+            SteamNonCriticalPhaseRegion::Vapor => "Vapor".to_owned(),
+            SteamNonCriticalPhaseRegion::Liquid => "Liquid".to_owned(),
+        }
+    }
+}
+
+impl Display for SteamNonCriticalPhaseRegion {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                SteamNonCriticalPhaseRegion::Vapor => "Vapor",
+                SteamNonCriticalPhaseRegion::Liquid => "Liquid",
+            }
+        )
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum SatQuery {
     SatTQuery {
         // K
@@ -35,7 +71,7 @@ pub enum SatQuery {
     },
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum SteamQuery {
     PtQuery(PtPoint),
     SatQuery(SatQuery),

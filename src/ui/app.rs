@@ -1,3 +1,4 @@
+use super::shared::modal::*;
 use super::thermo::steam_table::steam_table_form::*;
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -56,6 +57,14 @@ fn switch_main(route: &MainRoute) -> Html {
 
 #[function_component(App)]
 pub fn app() -> Html {
+    let show_modal = use_state_eq(|| false);
+    let toggle_show_modal = {
+        let show_modal = show_modal.clone();
+        let show_modal_value = !*show_modal;
+        Callback::from(move |_: MouseEvent| {
+            show_modal.set(show_modal_value);
+        })
+    };
     html! {
         <div class={classes!("flex", "items-center", "justify-center")}>
             <div class={classes!("w-full", "lg:w-[theme(screens.lg)]")}>
@@ -75,6 +84,21 @@ pub fn app() -> Html {
                     </ul>
                 </header>
                 <main class={classes!("bg-white", "min-h-[calc(100vh-theme(spacing.20)-theme(spacing.20))]")}>
+                    <button onclick={toggle_show_modal}>{"toggle modal"}</button>
+                    {
+                        if *show_modal {
+                            html! {
+                            <Modal class={classes!("")}>
+                            <h1>{"test2"}</h1>
+                            </Modal>
+
+                            }
+                        } else {
+                            html! {
+                                <></>
+                            }
+                        }
+                    }
                     <BrowserRouter>
                         <Switch<MainRoute> render={Switch::render(switch_main)} />
                     </BrowserRouter>

@@ -1,3 +1,4 @@
+use super::js_bindings::console_log;
 use super::shared::modal::*;
 use super::thermo::steam_table::steam_table_form::*;
 use yew::prelude::*;
@@ -65,6 +66,12 @@ pub fn app() -> Html {
             show_modal.set(show_modal_value);
         })
     };
+    let close_modal = {
+        let show_modal = show_modal.clone();
+        Callback::from(move |_: Event| {
+            show_modal.set(false);
+        })
+    };
     html! {
         <div class={classes!("flex", "items-center", "justify-center")}>
             <div class={classes!("w-full", "lg:w-[theme(screens.lg)]")}>
@@ -88,7 +95,7 @@ pub fn app() -> Html {
                     {
                         if *show_modal {
                             html! {
-                            <Modal class={classes!("")}>
+                            <Modal class={classes!("bg-red-700")} on_close_requested={close_modal}>
                             <h1>{"test2"}</h1>
                             </Modal>
 

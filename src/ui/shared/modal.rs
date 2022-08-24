@@ -1,14 +1,11 @@
 use gloo_events::EventListener;
 use uuid::Uuid;
 use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
-use web_sys::{Event, HtmlElement, MouseEvent, Node};
+use web_sys::{Event, HtmlElement, Node};
 use yew::{
     classes, create_portal, function_component, html, use_effect, use_effect_with_deps,
-    use_node_ref, use_ref, use_state, virtual_dom::Listener, Callback, Children, Classes, NodeRef,
-    Properties,
+    use_node_ref, use_ref, use_state, Callback, Children, Classes, Properties,
 };
-
-use crate::ui::js_bindings::console_log;
 
 #[derive(Properties, PartialEq)]
 pub struct ModalProps {
@@ -84,10 +81,13 @@ pub fn modal(
         create_portal(
             html! {
             <div
-                class={classes!("fixed", "top-0", "left-0", "w-full", "h-full", "z-30")}
+                class={classes!("fixed", "top-0", "left-0",
+                    "w-full", "h-full", "z-30", "grid", "place-items-center")}
                 >
-                <div ref={modal_ref} class={class}>
-                    {for children.iter()}
+                <div class={classes!("w-full", "h-full", "z-40","grid", "place-items-center")}>
+                    <div ref={modal_ref} class={class}>
+                        {for children.iter()}
+                    </div>
                 </div>
             </div>
             },

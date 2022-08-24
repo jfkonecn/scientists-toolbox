@@ -67,8 +67,6 @@ dependencies = [
 [tasks.dev]
 dependencies = [
     "format",
-    "form-maker-dev", 
-    "form-maker-derive-dev",
     "tailwind-dev",
     "app-build-dev",
     "test-dev"
@@ -77,8 +75,6 @@ dependencies = [
 [tasks.release]
 dependencies = [
     "check-format",
-    "form-maker-release", 
-    "form-maker-derive-release",
     "tailwind-release",
     "app-build-release",
     "test-release"

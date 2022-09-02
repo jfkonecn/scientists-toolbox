@@ -26,6 +26,8 @@ wasm-logger = "0.2.0"
 log = "0.4.6"
 gloo-utils = "0.1.2"
 gloo-events = "0.1.2"
+strum = "0.24"
+strum_macros = "0.24"
 
 [dependencies.uuid]
 version = "1"

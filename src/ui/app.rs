@@ -2,11 +2,13 @@ use super::js_bindings::console_log;
 use super::shared::search_button::*;
 use super::splash::Splash;
 use super::thermo::steam_table::steam_table_form::*;
+use strum::IntoEnumIterator;
+use strum_macros::EnumIter;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
-#[derive(Clone, Routable, PartialEq, Debug)]
-enum MainRoute {
+#[derive(Clone, Copy, Routable, PartialEq, Debug, EnumIter)]
+pub enum MainRoute {
     #[at("/")]
     Home,
     #[at("/Thermo")]
@@ -18,14 +20,15 @@ enum MainRoute {
     NotFound,
 }
 
-#[derive(Clone, Routable, PartialEq, Debug)]
-enum ThermoRoute {
+#[derive(Clone, Copy, Routable, PartialEq, Debug, EnumIter)]
+pub enum ThermoRoute {
     #[at("/Thermo/SteamTable")]
     SteamTable,
     #[not_found]
     #[at("/*")]
     NotFound,
 }
+
 #[function_component(NotFound)]
 fn not_found() -> Html {
     html! {

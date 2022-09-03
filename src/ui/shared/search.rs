@@ -239,7 +239,7 @@ pub fn search() -> Html {
         }
     };
     html! {
-        <div class={classes!("flex", "flex-col", "gap-10")}>
+        <div class={classes!("flex", "flex-col", "gap-6")}>
             <fieldset class={classes!("h-10", "relative")}>
                 <div
                 class={classes!("grid", "h-full","absolute",

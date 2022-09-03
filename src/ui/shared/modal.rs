@@ -1,3 +1,4 @@
+use crate::ui::assets::svg::*;
 use gloo_events::EventListener;
 use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
 use web_sys::{Event, HtmlElement, MouseEvent, Node};
@@ -31,6 +32,7 @@ pub fn modal(
 ) -> Html {
     let modal_element_created = use_state(|| false);
     let modal_id = use_random_id();
+    let x_button_id = use_random_id();
     let modal_ref = use_node_ref();
     {
         let modal_id = modal_id.clone();
@@ -84,6 +86,12 @@ pub fn modal(
             on_close_requested.emit(e.into());
         })
     };
+    let on_close_button_clicked = {
+        let on_close_requested = on_close_requested.clone();
+        Callback::from(move |e: MouseEvent| {
+            on_close_requested.emit(e.into());
+        })
+    };
 
     if let Some(modal_host) = get_modal_element(modal_id) {
         create_portal(
@@ -96,17 +104,33 @@ pub fn modal(
                     "bg-white", "border-2", "border-gray-200",
                     "w-full", "h-full", "md:w-auto", "md:h-auto",
                     "rounded-lg")}>
-                        <form class={classes!("flex", "flex-col", "gap-3", "divide-y-2", "[&>*]:px-4", "pt-4")}>
+                        <form class={classes!("flex", "flex-col", "divide-y-2", "[&>*]:py-2", "[&>*]:px-4", "h-full", "w-full")}>
                             <div class={classes!("flex", "flex-row")}>
-                                <h2>{title}</h2>
+                                <h2 class={classes!("block")}>{title}</h2>
                                 <div class={classes!("flex-grow")}></div>
-                                <button onclick={on_x_clicked}>{"x"}</button>
+                                <label class={classes!("block", "relative", "h-6", "w-6")} for={x_button_id.clone()}>
+                                    <input
+                                        type={"button"}
+                                        class={classes!("absolute", "left-0", "top-0", "w-full", "h-full", "block")}
+                                        id={x_button_id.clone()}
+                                        aria-label={"Close Button"}
+                                        onclick={on_x_clicked}
+                                    />
+                                    <XMark/>
+                                </label>
                             </div>
-                            <div class={classes!("overflow-auto", "py-2")}>
+                            <div class={classes!("overflow-auto", "flex-grow")}>
                                 {for children.iter()}
                             </div>
-                            <div>
-
+                            <div class={classes!("w-full", "flex", "flex-row")}>
+                                <div class={classes!("flex-grow")}></div>
+                                <input
+                                    class={classes!("h-12", "p-2", "border-2", "border-gray-200", "rounded-lg")}
+                                    type={"button"}
+                                    value={"Close"}
+                                    aria-label={"Close Button"}
+                                    onclick={on_close_button_clicked}
+                                />
                             </div>
                         </form>
                 </div>

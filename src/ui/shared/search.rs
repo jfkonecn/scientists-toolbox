@@ -1,4 +1,3 @@
-use crate::thermo::steam::SatQuery;
 use crate::ui::app::{MainRoute, ThermoRoute};
 use crate::ui::assets::svg::*;
 use strum::IntoEnumIterator;
@@ -34,17 +33,16 @@ fn create_link_configs() -> Vec<SearchableGroup> {
         configs: MainRoute::iter()
             .map(|route| {
                 let opt: Option<(String, Vec<String>)> = match route {
-                    // ThermoRoute::SteamTable => Some(("Steam Table".to_owned(), vec![])),
-                    MainRoute::Home => Some(("Home".to_owned(), vec!["test".to_owned()])),
-                    MainRoute::NotFound => Some((
-                        "Not Found".to_owned(),
-                        vec!["something".to_owned(), "test".to_owned()],
-                    )),
-                    MainRoute::Thermo | MainRoute::ThermoRoot => None,
-                    // MainRoute::Home
-                    // | MainRoute::NotFound
-                    // | MainRoute::Thermo
-                    // | MainRoute::ThermoRoot => None,
+                    // MainRoute::Home => Some(("Home".to_owned(), vec!["test".to_owned()])),
+                    // MainRoute::NotFound => Some((
+                    //     "Not Found".to_owned(),
+                    //     vec!["something".to_owned(), "test".to_owned()],
+                    // )),
+                    // MainRoute::Thermo | MainRoute::ThermoRoot => None,
+                    MainRoute::Home
+                    | MainRoute::NotFound
+                    | MainRoute::Thermo
+                    | MainRoute::ThermoRoot => None,
                 };
                 if let Some((label, tags)) = opt {
                     Some(SearchableLinkConfig {

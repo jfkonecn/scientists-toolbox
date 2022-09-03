@@ -1,4 +1,3 @@
-use super::js_bindings::console_log;
 use super::shared::search_button::*;
 use super::splash::Splash;
 use super::thermo::steam_table::steam_table_form::*;
@@ -101,9 +100,7 @@ fn app_shell(AppShellProps { children }: &AppShellProps) -> Html {
                                 }
                             } else {
                                 html! {
-                                    <li class={classes!("w-5", "h-5")}>
-                                        <SearchButton/>
-                                    </li>
+                                    <></>
                                 }
                             }
                         }

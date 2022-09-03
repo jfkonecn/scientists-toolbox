@@ -75,7 +75,20 @@ struct SearchResultProps {
 #[function_component(SearchResult)]
 fn search_result(SearchResultProps { group }: &SearchResultProps) -> html {
     html! {
-        <output>{group.label.to_owned()}</output>
+        <output>
+            <h2>{group.label.to_owned()}</h2>
+            <ul>
+            {
+                for group.configs.iter().map(|x| {
+                    html! {
+                        <li>
+                            {x.label.to_owned()}
+                        </li>
+                    }
+                })
+            }
+            </ul>
+        </output>
     }
 }
 

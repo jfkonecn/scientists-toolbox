@@ -33,7 +33,8 @@ pub fn search_button() -> Html {
                 if *show_modal {
                     html! {
                     <Modal
-                        class={classes!("bg-red-700", "w-44", "h-52")} on_close_requested={close_modal}>
+                        title={"Search".to_owned()}
+                        on_close_requested={close_modal}>
                         <Search/>
                     </Modal>
 

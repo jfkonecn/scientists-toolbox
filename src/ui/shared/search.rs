@@ -239,7 +239,7 @@ pub fn search() -> Html {
         }
     };
     html! {
-        <form class={classes!("flex", "flex-col", "gap-3")}>
+        <div class={classes!("flex", "flex-col", "gap-10")}>
             <fieldset class={classes!("h-10", "relative")}>
                 <div
                 class={classes!("grid", "h-full","absolute",
@@ -258,6 +258,7 @@ pub fn search() -> Html {
                     oninput={oninput}
                 />
             </fieldset>
+            <fieldset class={classes!("flex", "flex-col", "gap-10")}>
             {
                 for configs.iter().map(|x| {
                     html! {
@@ -265,6 +266,7 @@ pub fn search() -> Html {
                     }
                 })
             }
-        </form>
+            </fieldset>
+        </div>
     }
 }

@@ -4,10 +4,10 @@ use yew::{classes, function_component, html};
 #[function_component(Splash)]
 pub fn splash() -> Html {
     html! {
-        <div
+        <form
             class={classes!("p-5")}
             >
             <Search/>
-        </div>
+        </form>
     }
 }

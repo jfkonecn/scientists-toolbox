@@ -82,14 +82,12 @@ pub fn modal(
         create_portal(
             html! {
             <div
-                class={classes!("fixed", "top-0", "left-0",
-                    "w-full", "h-full", "z-30", "grid", "place-items-center")}
+                class={classes!("fixed", "flex", "items-start", "justify-center", "flex-row", "content-start", "top-0", "left-0",
+                    "w-screen", "h-screen", "z-30", "pt-5", "md:pt-24")}
                 >
-                <div class={classes!("w-full", "h-full", "z-40","grid", "place-items-center")}>
                     <div ref={modal_ref} class={class}>
                         {for children.iter()}
                     </div>
-                </div>
             </div>
             },
             modal_host.into(),

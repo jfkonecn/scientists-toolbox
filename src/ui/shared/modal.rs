@@ -98,11 +98,11 @@ pub fn modal(
             html! {
             <form
                 class={classes!("fixed", "flex", "items-start", "justify-center", "flex-row", "content-start", "top-0", "left-0",
-                    "w-screen", "h-screen", "z-30", "p-5", "md:pt-24")}
+                    "w-screen", "h-screen", "z-30", "p-5" )}
                 >
                 <div ref={modal_ref} class={classes!(
                     "bg-white", "border-2", "border-gray-200",
-                    "w-full", "h-full", "md:w-auto", "md:h-auto",
+                    "max-w-lg", "h-4/5", "h-full", "w-full",
                     "rounded-lg")}>
                         <form class={classes!("flex", "flex-col", "divide-y-2", "[&>*]:py-2", "[&>*]:px-4", "h-full", "w-full")}>
                             <div class={classes!("flex", "flex-row")}>

@@ -1,11 +1,12 @@
 use gloo_events::EventListener;
-use uuid::Uuid;
 use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
 use web_sys::{Event, HtmlElement, Node};
 use yew::{
     classes, create_portal, function_component, html, use_effect, use_effect_with_deps,
-    use_node_ref, use_ref, use_state, Callback, Children, Classes, Properties,
+    use_node_ref, use_state, Callback, Children, Classes, Properties,
 };
+
+use super::hooks::use_random_id;
 
 #[derive(Properties, PartialEq)]
 pub struct ModalProps {
@@ -29,10 +30,10 @@ pub fn modal(
     }: &ModalProps,
 ) -> Html {
     let modal_element_created = use_state(|| false);
-    let modal_id_ref = use_ref(|| Uuid::new_v4().to_string());
+    let modal_id = use_random_id();
     let modal_ref = use_node_ref();
     {
-        let modal_id_ref = modal_id_ref.clone();
+        let modal_id = modal_id.clone();
         use_effect_with_deps(
             move |_| {
                 let doc = gloo_utils::document();
@@ -40,12 +41,12 @@ pub fn modal(
                 let element = doc
                     .create_element("div")
                     .expect("Failed to create modal element");
-                element.set_id(modal_id_ref.as_str());
+                element.set_id(modal_id.as_str());
                 body.append_child(&element)
                     .expect("Failed to append modal element");
                 modal_element_created.set(true);
                 move || {
-                    get_modal_element((*modal_id_ref).clone())
+                    get_modal_element(modal_id)
                         .ok_or(JsValue::from("_"))
                         .and_then(|ele| body.remove_child(&ele))
                         .expect_throw("Failed to remove modal element");
@@ -77,7 +78,7 @@ pub fn modal(
         });
     }
 
-    if let Some(modal_host) = get_modal_element((*modal_id_ref).clone()) {
+    if let Some(modal_host) = get_modal_element(modal_id) {
         create_portal(
             html! {
             <div

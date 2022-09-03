@@ -2,7 +2,6 @@ use super::js_bindings::console_log;
 use super::shared::search_button::*;
 use super::splash::Splash;
 use super::thermo::steam_table::steam_table_form::*;
-use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -92,15 +91,19 @@ fn app_shell(AppShellProps { children }: &AppShellProps) -> Html {
                         </li>
                     </ul>
                     <div class={classes!("flex-grow")}></div>
-                    <ul class={classes!("flex", "items-center", "h-full")}>
+                    <ul class={classes!("flex", "items-center", "gap-6", "h-full")}>
                         {
                             if show_search_on_nav_bar {
                                 html! {
-                                    <SearchButton button_type={SearchButtonType::Compact} />
+                                    <li class={classes!("w-5", "h-5")}>
+                                        <SearchButton/>
+                                    </li>
                                 }
                             } else {
                                 html! {
-                                    <></>
+                                    <li class={classes!("w-5", "h-5")}>
+                                        <SearchButton/>
+                                    </li>
                                 }
                             }
                         }

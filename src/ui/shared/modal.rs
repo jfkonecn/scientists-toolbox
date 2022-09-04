@@ -1,7 +1,7 @@
 use crate::ui::assets::svg::*;
 use gloo_events::EventListener;
 use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
-use web_sys::{Event, HtmlElement, MouseEvent, Node};
+use web_sys::{Event, FocusEvent, HtmlElement, MouseEvent, Node};
 use yew::{
     classes, create_portal, function_component, html, use_effect, use_effect_with_deps,
     use_node_ref, use_state, Callback, Children, Properties,
@@ -16,6 +16,8 @@ pub struct ModalProps {
     pub children: Children,
     #[prop_or_else(Callback::noop)]
     pub on_close_requested: Callback<Event>,
+    #[prop_or_else(Callback::noop)]
+    pub on_submit: Callback<FocusEvent>,
 }
 
 fn get_modal_element(modal_id: String) -> Option<web_sys::Element> {
@@ -28,6 +30,7 @@ pub fn modal(
         title,
         children,
         on_close_requested,
+        on_submit,
     }: &ModalProps,
 ) -> Html {
     let modal_element_created = use_state(|| false);
@@ -93,12 +96,20 @@ pub fn modal(
         })
     };
 
+    let on_submit = {
+        let on_submit = on_submit.clone();
+        Callback::from(move |e: FocusEvent| {
+            on_submit.emit(e);
+        })
+    };
+
     if let Some(modal_host) = get_modal_element(modal_id) {
         create_portal(
             html! {
             <form
                 class={classes!("fixed", "flex", "items-start", "justify-center", "flex-row", "content-start", "top-0", "left-0",
                     "w-screen", "h-screen", "z-30", "p-5" )}
+                onsubmit={on_submit}
                 >
                 <div ref={modal_ref} class={classes!(
                     "bg-white", "border-2", "border-gray-200",

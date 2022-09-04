@@ -40,6 +40,10 @@ pub fn search_button() -> Html {
         );
     }
 
+    let on_submit = Callback::from(move |e: FocusEvent| {
+        e.prevent_default();
+    });
+
     html! {
         <>
             <button
@@ -52,7 +56,9 @@ pub fn search_button() -> Html {
                     html! {
                     <Modal
                         title={"Search".to_owned()}
-                        on_close_requested={close_modal}>
+                        on_close_requested={close_modal}
+                        on_submit={on_submit}
+                        >
                         <Search/>
                     </Modal>
 

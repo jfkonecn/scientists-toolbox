@@ -1,5 +1,5 @@
 use super::shared::search::*;
-use web_sys::{Event, FocusEvent};
+use web_sys::FocusEvent;
 use yew::{classes, function_component, html};
 
 #[function_component(Splash)]

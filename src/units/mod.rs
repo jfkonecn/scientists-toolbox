@@ -1,16 +1,19 @@
 use core::fmt;
 
 pub struct RawUnit {
-    value: f64,
-    unit_display: String,
+    pub value: f64,
+    pub unit_display: String,
 }
 
 pub enum ParseUnitError {
     UnknownUnit(String),
 }
 
-pub trait Unit<Si>: fmt::Debug + TryFrom<RawUnit> + Into<RawUnit> {
-    fn into_si_unit(&self) -> Si;
+pub trait Unit: fmt::Debug + TryFrom<RawUnit> + Into<RawUnit> {
+    type Si;
+    fn into_si_unit(&self) -> Self::Si;
+    fn list_unit_strings() -> Vec<String>;
+    fn get_si_unit_string() -> String;
 }
 
 macro_rules! units {
@@ -24,12 +27,62 @@ macro_rules! units {
         })*
     })*) => {
         $(
-        pub type $si_unit_name = f64;
+        #[derive(Debug, PartialEq, Clone, Copy)]
+        pub struct $si_unit_name {
+            value: f64
+        }
+
+        impl $si_unit_name {
+            pub fn new(value: f64) -> $si_unit_name {
+                $si_unit_name {
+                    value
+                }
+            }
+
+            pub fn abs(self) -> f64 {
+                self.value
+            }
+        }
+        impl std::ops::Sub for $si_unit_name {
+            type Output = Self;
+
+            fn sub(self, other: Self) -> Self::Output {
+                Self {
+                    value: self.value - other.value,
+                }
+            }
+        }
+
         $(
-        pub type $unit_name = f64;
+        #[derive(Debug, PartialEq, Clone, Copy)]
+        pub struct $unit_name {
+            value: f64
+        }
+
+        impl $unit_name {
+            pub fn new(value: f64) -> $unit_name {
+                $unit_name {
+                    value
+                }
+            }
+
+            pub fn abs(self) -> f64 {
+                self.value
+            }
+        }
+
+        impl std::ops::Sub for $unit_name {
+            type Output = Self;
+
+            fn sub(self, other: Self) -> Self::Output {
+                Self {
+                    value: self.value - other.value,
+                }
+            }
+        }
         )*
 
-        #[derive(Debug, PartialEq)]
+        #[derive(Debug, PartialEq, Clone)]
         pub enum $type_name {
             $si_unit_name($si_unit_name),
             $(
@@ -46,9 +99,9 @@ macro_rules! units {
                 }: RawUnit,
             ) -> Result<Self, Self::Error> {
                 match unit_display.as_str() {
-                    $si_str  => Ok($type_name::$si_unit_name(value)),
+                    $si_str  => Ok($type_name::$si_unit_name($si_unit_name::new(value))),
                     $(
-                    $unit_str  => Ok($type_name::$unit_name(value)),
+                    $unit_str  => Ok($type_name::$unit_name($unit_name::new(value))),
                     )*
                     _ => Err(ParseUnitError::UnknownUnit(unit_display)),
                 }
@@ -58,12 +111,12 @@ macro_rules! units {
         impl Into<RawUnit> for $type_name {
             fn into(self) -> RawUnit {
                 match self {
-                    $type_name::$si_unit_name(value) => RawUnit {
+                    $type_name::$si_unit_name($si_unit_name {value}) => RawUnit {
                         value,
                         unit_display: $si_str.to_owned(),
                     },
                     $(
-                    $type_name::$unit_name(value) => RawUnit {
+                    $type_name::$unit_name($unit_name {value}) => RawUnit {
                         value,
                         unit_display: $unit_str.to_owned(),
                     },
@@ -72,17 +125,26 @@ macro_rules! units {
             }
         }
 
-        impl Unit<$si_unit_name> for $type_name {
+        impl Unit for $type_name {
+            type Si = $si_unit_name;
             fn into_si_unit(&self) -> $si_unit_name {
-                match *self {
-                    $type_name::$si_unit_name(x) => x,
+                match self {
+                    $type_name::$si_unit_name(x) => (*x).clone(),
                     $(
-                    $type_name::$unit_name(x) => {
+                    $type_name::$unit_name($unit_name {value}) => {
                         let f = $unit_function;
-                        f(x)
+                        $si_unit_name::new(f(value))
                     },
                     )*
                 }
+            }
+
+            fn list_unit_strings() -> Vec<String> {
+                vec![$si_str.to_owned(), $($unit_str.to_owned(),)*]
+            }
+
+            fn get_si_unit_string() -> String {
+                $si_str.to_owned()
             }
         }
         )*
@@ -124,18 +186,24 @@ mod tests {
     use assert_approx_eq::assert_approx_eq;
     #[test]
     fn length_conversion() {
-        assert_approx_eq!(Length::M(1f64).into_si_unit(), 1f64);
-        assert_approx_eq!(Length::Ft(1f64).into_si_unit(), 1f64 / 3.28084);
+        assert_approx_eq!(Length::M(M::new(1f64)).into_si_unit(), M::new(1f64));
         assert_approx_eq!(
-            Length::Inches(1f64).into_si_unit(),
-            1f64 / (3.28084 * 12f64)
+            Length::Ft(Ft::new(1f64)).into_si_unit(),
+            M::new(1f64 / 3.28084)
+        );
+        assert_approx_eq!(
+            Length::Inches(Inches::new(1f64)).into_si_unit(),
+            M::new(1f64 / (3.28084 * 12f64))
         );
     }
 
     #[test]
     fn mass_conversion() {
-        assert_approx_eq!(Mass::Kg(1f64).into_si_unit(), 1f64);
-        assert_approx_eq!(Mass::G(1f64).into_si_unit(), 1000f64);
-        assert_approx_eq!(Mass::Lbsm(1f64).into_si_unit(), 2.20462f64);
+        assert_approx_eq!(Mass::Kg(Kg::new(1f64)).into_si_unit(), Kg::new(1f64));
+        assert_approx_eq!(Mass::G(G::new(1f64)).into_si_unit(), Kg::new(1000f64));
+        assert_approx_eq!(
+            Mass::Lbsm(Lbsm::new(1f64)).into_si_unit(),
+            Kg::new(2.20462f64)
+        );
     }
 }

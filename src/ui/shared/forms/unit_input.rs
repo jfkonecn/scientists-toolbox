@@ -1,12 +1,10 @@
-use std::convert::TryInto;
-
 use crate::units::{RawUnit, Unit};
 
 use super::boxed_label::*;
 use super::*;
 use wasm_bindgen::JsCast;
 use web_sys::{EventTarget, HtmlInputElement, HtmlSelectElement};
-use yew::{html::IntoPropValue, prelude::*};
+use yew::prelude::*;
 
 #[derive(Clone, Debug, Properties, PartialEq)]
 pub struct UnitInputProps {

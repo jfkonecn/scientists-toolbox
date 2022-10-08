@@ -5,6 +5,7 @@ pub struct RawUnit {
     pub unit_display: String,
 }
 
+#[derive(Clone, Debug, PartialEq)]
 pub enum ParseUnitError {
     UnknownUnit(String),
 }
@@ -14,6 +15,8 @@ pub trait Unit: fmt::Debug + TryFrom<RawUnit> + Into<RawUnit> {
     fn into_si_unit(&self) -> Self::Si;
     fn list_unit_strings() -> Vec<String>;
     fn get_si_unit_string() -> String;
+    fn get_value(&self) -> f64;
+    fn try_convert(&self, unit_display: String) -> Result<Self, ParseUnitError>;
 }
 
 macro_rules! units {
@@ -23,7 +26,8 @@ macro_rules! units {
         }
         $(,$unit_name:ident {
             $unit_str:literal,
-            $unit_function:expr
+            $unit_function:expr,
+            $from_si_function:expr
         })*
     })*) => {
         $(
@@ -82,7 +86,7 @@ macro_rules! units {
         }
         )*
 
-        #[derive(Debug, PartialEq, Clone)]
+        #[derive(Debug, PartialEq, Clone, Copy)]
         pub enum $type_name {
             $si_unit_name($si_unit_name),
             $(
@@ -146,8 +150,36 @@ macro_rules! units {
             fn get_si_unit_string() -> String {
                 $si_str.to_owned()
             }
+
+            fn get_value(&self) -> f64 {
+                match self {
+                    $type_name::$si_unit_name(x) => (*x).value,
+                    $(
+                    $type_name::$unit_name($unit_name {value}) => {
+                        *value
+                    },
+                    )*
+                }
+            }
+
+            fn try_convert(&self, unit_display: String) -> Result<Self, ParseUnitError> {
+                let si_unit = self.into_si_unit();
+                let value = si_unit.value;
+
+                match unit_display.as_str() {
+                    $si_str  => Ok($type_name::$si_unit_name($si_unit_name::new(value))),
+                    $(
+                    $unit_str  =>  {
+                        let f = $from_si_function;
+                        Ok($type_name::$unit_name($unit_name::new(f(value))))
+                    },
+                    )*
+                    _ => Err(ParseUnitError::UnknownUnit(unit_display)),
+                }
+            }
         }
         )*
+
     };
 }
 
@@ -158,11 +190,13 @@ units! {
         },
         Ft {
             "ft",
-            |x| x / 3.28084
+            |x| x / 3.28084,
+            |x| x * 3.28084
         },
         Inches {
             "in",
-            |x| x / (3.28084 * 12f64)
+            |x| x / (3.28084 * 12f64),
+            |x| x * (3.28084 * 12f64)
         }
     }
     Mass {
@@ -171,11 +205,13 @@ units! {
         },
         G {
             "g",
-            |x| x * 1000f64
+            |x| x * 1000f64,
+            |x| x / 1000f64
         },
         Lbsm {
             "Lbsₘ",
-            |x| x * 2.20462f64
+            |x| x * 2.20462f64,
+            |x| x / 2.20462f64
         }
     }
 }

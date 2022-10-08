@@ -10,24 +10,32 @@ pub enum ParseUnitError {
     UnknownUnit(String),
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub struct UnitLabel {
+    pub abbreviation: String,
+    pub plural: String,
+}
+
 pub trait Unit: fmt::Debug + TryFrom<RawUnit> + Into<RawUnit> {
     type Si;
     fn into_si_unit(&self) -> Self::Si;
-    fn list_unit_strings() -> Vec<String>;
-    fn get_si_unit_string() -> String;
+    fn list_unit_labels() -> Vec<UnitLabel>;
+    fn get_si_unit_label() -> UnitLabel;
     fn get_value(&self) -> f64;
-    fn try_convert(&self, unit_display: String) -> Result<Self, ParseUnitError>;
+    fn try_convert(&self, abbreviation_label: String) -> Result<Self, ParseUnitError>;
 }
 
 macro_rules! units {
     ($($type_name:ident {
         $si_unit_name:ident {
-            $si_str:literal,
+            $si_abbreviation:literal,
+            $si_plural:literal,
         }
         $(,$unit_name:ident {
-            $unit_str:literal,
+            $unit_abbreviation:literal,
+            $unit_plural:literal,
             $unit_function:expr,
-            $from_si_function:expr
+            $from_si_function:expr,
         })*
     })*) => {
         $(
@@ -36,6 +44,7 @@ macro_rules! units {
             value: f64
         }
 
+        #[allow(dead_code)]
         impl $si_unit_name {
             pub fn new(value: f64) -> $si_unit_name {
                 $si_unit_name {
@@ -63,6 +72,7 @@ macro_rules! units {
             value: f64
         }
 
+        #[allow(dead_code)]
         impl $unit_name {
             pub fn new(value: f64) -> $unit_name {
                 $unit_name {
@@ -103,9 +113,9 @@ macro_rules! units {
                 }: RawUnit,
             ) -> Result<Self, Self::Error> {
                 match unit_display.as_str() {
-                    $si_str  => Ok($type_name::$si_unit_name($si_unit_name::new(value))),
+                    $si_abbreviation  => Ok($type_name::$si_unit_name($si_unit_name::new(value))),
                     $(
-                    $unit_str  => Ok($type_name::$unit_name($unit_name::new(value))),
+                    $unit_abbreviation  => Ok($type_name::$unit_name($unit_name::new(value))),
                     )*
                     _ => Err(ParseUnitError::UnknownUnit(unit_display)),
                 }
@@ -117,12 +127,12 @@ macro_rules! units {
                 match self {
                     $type_name::$si_unit_name($si_unit_name {value}) => RawUnit {
                         value,
-                        unit_display: $si_str.to_owned(),
+                        unit_display: $si_abbreviation.to_owned(),
                     },
                     $(
                     $type_name::$unit_name($unit_name {value}) => RawUnit {
                         value,
-                        unit_display: $unit_str.to_owned(),
+                        unit_display: $unit_abbreviation.to_owned(),
                     },
                     )*
                 }
@@ -143,12 +153,26 @@ macro_rules! units {
                 }
             }
 
-            fn list_unit_strings() -> Vec<String> {
-                vec![$si_str.to_owned(), $($unit_str.to_owned(),)*]
+            fn list_unit_labels() -> Vec<UnitLabel> {
+                vec![
+                    UnitLabel {
+                        abbreviation: $si_abbreviation.to_owned(),
+                        plural: $si_plural.to_owned(),
+                    },
+                    $(
+                        UnitLabel {
+                            abbreviation: $unit_abbreviation.to_owned(),
+                            plural: $unit_plural.to_owned(),
+                        },
+                    )*
+                ]
             }
 
-            fn get_si_unit_string() -> String {
-                $si_str.to_owned()
+            fn get_si_unit_label() -> UnitLabel {
+                UnitLabel {
+                    abbreviation: $si_abbreviation.to_owned(),
+                    plural: $si_plural.to_owned(),
+                }
             }
 
             fn get_value(&self) -> f64 {
@@ -167,9 +191,9 @@ macro_rules! units {
                 let value = si_unit.value;
 
                 match unit_display.as_str() {
-                    $si_str  => Ok($type_name::$si_unit_name($si_unit_name::new(value))),
+                    $si_abbreviation  => Ok($type_name::$si_unit_name($si_unit_name::new(value))),
                     $(
-                    $unit_str  =>  {
+                    $unit_abbreviation  =>  {
                         let f = $from_si_function;
                         Ok($type_name::$unit_name($unit_name::new(f(value))))
                     },
@@ -187,31 +211,37 @@ units! {
     Length {
         M {
             "m",
+            "meters",
         },
         Ft {
             "ft",
+            "feet",
             |x| x / 3.28084,
-            |x| x * 3.28084
+            |x| x * 3.28084,
         },
         Inches {
             "in",
+            "inches",
             |x| x / (3.28084 * 12f64),
-            |x| x * (3.28084 * 12f64)
+            |x| x * (3.28084 * 12f64),
         }
     }
     Mass {
         Kg {
             "kg",
+            "kilograms",
         },
         G {
             "g",
+            "grams",
             |x| x * 1000f64,
-            |x| x / 1000f64
+            |x| x / 1000f64,
         },
         Lbsm {
             "Lbsₘ",
+            "pounds mass",
             |x| x * 2.20462f64,
-            |x| x / 2.20462f64
+            |x| x / 2.20462f64,
         }
     }
 }

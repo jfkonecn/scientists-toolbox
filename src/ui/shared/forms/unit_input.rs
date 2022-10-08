@@ -72,7 +72,7 @@ pub fn unit_input2<T: Unit + PartialEq + TryFrom<RawUnit> + Into<RawUnit> + 'sta
         onchange,
     }: &UnitInputProps2<T>,
 ) -> Html {
-    let selected_unit_ref = use_mut_ref(|| Some(T::get_si_unit_string()));
+    let selected_unit_ref = use_mut_ref(|| Some(T::get_si_unit_label().abbreviation));
     let selected_unit = (*selected_unit_ref.borrow())
         .clone()
         .unwrap_or("".to_owned());
@@ -111,7 +111,7 @@ pub fn unit_input2<T: Unit + PartialEq + TryFrom<RawUnit> + Into<RawUnit> + 'sta
             }
         },
     );
-    let options = T::list_unit_strings();
+    let options = T::list_unit_labels();
     let on_value_input = {
         let oninput = oninput.clone();
         Callback::from(move |e: InputEvent| {
@@ -158,9 +158,10 @@ pub fn unit_input2<T: Unit + PartialEq + TryFrom<RawUnit> + Into<RawUnit> + 'sta
                         options.into_iter().map(|x| {
                             html! {
                                 <option
-                                    selected={x == selected_unit}
-                                    value={x.clone()}
-                                    >{x}</option>
+                                    selected={x.abbreviation == selected_unit}
+                                    value={x.clone().abbreviation}
+                                    ariallabel={x.clone().plural}
+                                    >{x.abbreviation}</option>
                             }
                         }).collect::<Html>()
                     }

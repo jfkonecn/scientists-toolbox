@@ -203,8 +203,8 @@ pub struct PtvEntry {
     pub enthalpy: f64,
     // J/(kg * K)
     pub entropy: f64,
-    // isochoric heat capacity
-    // Heat Capacity at constant volume (J/(kg*K))
+    /// Isochoric Heat Capacity
+    /// Heat Capacity at constant volume (J/(kg*K))
     pub cv: f64,
     // isobaric heat capacity
     // Heat Capacity at constant pressure (J/(kg*K))

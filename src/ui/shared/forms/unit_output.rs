@@ -52,7 +52,7 @@ pub struct UnitOutputProps2<T: PartialEq + TryFrom<RawUnit> + Into<RawUnit> + Co
 pub fn unit_input2<T: Unit + PartialEq + TryFrom<RawUnit> + Into<RawUnit> + Copy + 'static>(
     UnitOutputProps2 { id, label, value }: &UnitOutputProps2<T>,
 ) -> Html {
-    let selected_unit = use_state(|| Some(T::get_si_unit_string()));
+    let selected_unit = use_state(|| Some(T::get_si_unit_label().abbreviation));
     let value_str = {
         let selected_unit = {
             let select_input = selected_unit.clone();
@@ -80,7 +80,7 @@ pub fn unit_input2<T: Unit + PartialEq + TryFrom<RawUnit> + Into<RawUnit> + Copy
             selected_unit.set(unit_opt);
         })
     };
-    let options = T::list_unit_strings();
+    let options = T::list_unit_labels();
     html! {
         <BoxedLabel id={id.clone()} label={label.clone()} label_type={LabelType::Output(OutputType::Success)}>
             <output
@@ -98,9 +98,10 @@ pub fn unit_input2<T: Unit + PartialEq + TryFrom<RawUnit> + Into<RawUnit> + Copy
                     options.into_iter().map(|x| {
                         html! {
                             <option
-                                selected={Some(x.clone()) == *selected_unit}
-                                value={x.clone()}
-                                >{x}</option>
+                                selected={Some(x.clone().abbreviation) == *selected_unit}
+                                value={x.clone().abbreviation}
+                                ariallabel={x.clone().plural}
+                                >{x.abbreviation}</option>
                         }
                     }).collect::<Html>()
                 }

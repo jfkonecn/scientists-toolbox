@@ -244,6 +244,30 @@ units! {
             |x| x / 2.20462f64,
         }
     }
+    Temperature {
+        K {
+            "K",
+            "kelvin",
+        },
+        C {
+            "°C",
+            "degrees celsius",
+            |x| x + 273.15,
+            |x| x - 273.15,
+        },
+        F {
+            "°F",
+            "degrees fahrenheit",
+            |x| ((x - 273.15f64) * 9f64 / 5f64) + 32f64,
+            |x| ((x - 32f64) * 5f64 / 9f64) + 273.15,
+        },
+        R {
+            "°R",
+            "degrees rankine",
+            |x| x * 5f64 / 9f64,
+            |x| x * 9f64 / 5f64,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -271,5 +295,12 @@ mod tests {
             Mass::Lbsm(Lbsm::new(1f64)).into_si_unit(),
             Kg::new(2.20462f64)
         );
+    }
+    #[test]
+    fn temperature_conversion() {
+        assert_approx_eq!(Temperature::K(K::new(1f64)).into_si_unit(), K::new(1f64));
+        assert_approx_eq!(Temperature::C(C::new(1f64)).into_si_unit(), K::new(274.15));
+        assert_approx_eq!(Temperature::F(F::new(1f64)).into_si_unit(), K::new(255.928));
+        assert_approx_eq!(Temperature::R(R::new(1f64)).into_si_unit(), K::new(0.556));
     }
 }

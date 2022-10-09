@@ -268,6 +268,72 @@ units! {
             |x| x * 9f64 / 5f64,
         }
     }
+    Pressure {
+        Pa {
+            "Pa",
+            "pascals",
+        },
+        KPa {
+            "kPa",
+            "kilopascals",
+            |x| x / 1000f64,
+            |x| x * 1000f64,
+        },
+        Lbf {
+            "lbf/in²",
+            "pounds-force per square inch",
+            |x| x / 6894.76,
+            |x| x * 6894.76,
+        }
+    }
+    EnergyPerMass {
+        JPerKg {
+            "J/kg",
+            "joules pr kilogram",
+        },
+        BtuPerLbsm {
+            "BTU/Lbsₘ",
+            "british thermal units per pounds mass",
+            |x| x * (2.2 * 1055.06),
+            |x| x / (2.2 * 1055.06),
+        }
+    }
+    EnergyPerMassTemperature {
+        JPerKgK {
+            "J/(kg · K)",
+            "joules per kilogram kelvin",
+        },
+        BtuPerLbsmR {
+            "BTU/(Lbsₘ · °R)",
+            "british thermal units per pounds mass degrees rankine",
+            |x| x * (2.2 * 1055.06 * 5f64 / 9f64),
+            |x| x / (2.2 * 1055.06 * 5f64 / 9f64),
+        }
+    }
+    Velocity {
+        MPerSec {
+            "m/s",
+            "meters per second",
+        },
+        FtPerSec {
+            "ft/s",
+            "feet per second",
+            |x| x / 3.28084,
+            |x| x * 3.28084,
+        }
+    }
+    SpecificVolume {
+        M3PerKg {
+            "m³/kg",
+            "cubic meters per kilogram",
+        },
+        Ft3PerLbsm {
+            "ft³/Lbsₘ",
+            "cubic feet per pounds mass",
+            |x| x * (2.20462 / 35.3147),
+            |x| x / (2.20462 / 35.3147),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -296,11 +362,73 @@ mod tests {
             Kg::new(2.20462f64)
         );
     }
+
     #[test]
     fn temperature_conversion() {
         assert_approx_eq!(Temperature::K(K::new(1f64)).into_si_unit(), K::new(1f64));
         assert_approx_eq!(Temperature::C(C::new(1f64)).into_si_unit(), K::new(274.15));
         assert_approx_eq!(Temperature::F(F::new(1f64)).into_si_unit(), K::new(255.928));
         assert_approx_eq!(Temperature::R(R::new(1f64)).into_si_unit(), K::new(0.556));
+    }
+
+    #[test]
+    fn pressure_conversion() {
+        assert_approx_eq!(Pressure::Pa(Pa::new(1f64)).into_si_unit(), Pa::new(1f64));
+        assert_approx_eq!(
+            Pressure::KPa(KPa::new(1f64)).into_si_unit(),
+            Pa::new(1000f64)
+        );
+        assert_approx_eq!(
+            Pressure::Lbf(Lbf::new(1f64)).into_si_unit(),
+            Pa::new(6894.76)
+        );
+    }
+
+    #[test]
+    fn energy_per_mass_conversion() {
+        assert_approx_eq!(
+            EnergyPerMass::JPerKg(JPerKg::new(1f64)).into_si_unit(),
+            JPerKg::new(1f64)
+        );
+        assert_approx_eq!(
+            EnergyPerMass::BtuPerLbsm(BtuPerLbsm::new(1f64)).into_si_unit(),
+            JPerKg::new(2.2 * 1055.06)
+        );
+    }
+
+    #[test]
+    fn energy_per_mass_temperature_conversion() {
+        assert_approx_eq!(
+            EnergyPerMassTemperature::JPerKgK(JPerKgK::new(1f64)).into_si_unit(),
+            JPerKgK::new(1f64)
+        );
+        assert_approx_eq!(
+            EnergyPerMassTemperature::BtuPerLbsmR(BtuPerLbsmR::new(1f64)).into_si_unit(),
+            JPerKgK::new(2.2 * 1055.06 * 5f64 / 9f64)
+        );
+    }
+
+    #[test]
+    fn velocity_conversion() {
+        assert_approx_eq!(
+            Velocity::MPerSec(MPerSec::new(1f64)).into_si_unit(),
+            MPerSec::new(1f64)
+        );
+        assert_approx_eq!(
+            Velocity::FtPerSec(FtPerSec::new(1f64)).into_si_unit(),
+            MPerSec::new(1f64 / 3.28084)
+        );
+    }
+
+    #[test]
+    fn specific_volume_conversion() {
+        assert_approx_eq!(
+            SpecificVolume::M3PerKg(M3PerKg::new(1f64)).into_si_unit(),
+            M3PerKg::new(1f64)
+        );
+        assert_approx_eq!(
+            SpecificVolume::Ft3PerLbsm(Ft3PerLbsm::new(1f64)).into_si_unit(),
+            M3PerKg::new(2.20462 / 35.3147)
+        );
     }
 }

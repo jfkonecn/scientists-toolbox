@@ -9,10 +9,8 @@ mod water_constants;
 
 #[derive(Copy, PartialEq, Clone, Debug)]
 pub struct PtPoint {
-    // Pa
-    pub pressure: f64,
-    // K
-    pub temperature: f64,
+    pub pressure: Pressure,
+    pub temperature: Temperature,
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -61,12 +59,12 @@ impl Display for SteamNonCriticalPhaseRegion {
 pub enum SatQuery {
     SatTQuery {
         // K
-        temperature: f64,
+        temperature: Temperature,
         phase_region: SteamNonCriticalPhaseRegion,
     },
     SatPQuery {
         // Pa
-        pressure: f64,
+        pressure: Pressure,
         phase_region: SteamNonCriticalPhaseRegion,
     },
 }
@@ -76,16 +74,12 @@ pub enum SteamQuery {
     PtQuery(PtPoint),
     SatQuery(SatQuery),
     EntropyPQuery {
-        // J/(kg * K)
-        entropy: f64,
-        // Pa
-        pressure: f64,
+        entropy: EnergyPerMassTemperature,
+        pressure: Pressure,
     },
     EnthalpyPQuery {
-        // J/kg
-        enthalpy: f64,
-        // Pa
-        pressure: f64,
+        enthalpy: EnergyPerMass,
+        pressure: Pressure,
     },
 }
 

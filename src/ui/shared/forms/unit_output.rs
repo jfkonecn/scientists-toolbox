@@ -7,50 +7,15 @@ use web_sys::{EventTarget, HtmlSelectElement};
 use yew::prelude::*;
 
 #[derive(Clone, Debug, Properties, PartialEq)]
-pub struct UnitOutputProps {
-    pub label: String,
-    pub id: String,
-    pub value: f64,
-    pub unit: String,
-}
-
-#[function_component(UnitOutput)]
-pub fn unit_input(
-    UnitOutputProps {
-        id,
-        label,
-        value,
-        unit,
-    }: &UnitOutputProps,
-) -> Html {
-    html! {
-        <BoxedLabel id={id.clone()} label={label.clone()} label_type={LabelType::Output(OutputType::Success)}>
-            <output
-                id={id.clone()}
-                class={classes!("inline-block", "px-3", "py-2", "w-[calc(100%-theme(spacing.24))]", "h-full")}
-            >
-                {format!("{:.3}", value)}
-            </output>
-            <output
-                id={format!("{}-unit", id)}
-                class={classes!("inline-block", "w-24", "h-full", "px-3", "py-2")}
-            >
-                {unit}
-            </output>
-        </BoxedLabel>
-    }
-}
-
-#[derive(Clone, Debug, Properties, PartialEq)]
-pub struct UnitOutputProps2<T: PartialEq + TryFrom<RawUnit> + Into<RawUnit> + Copy> {
+pub struct UnitOutputProps<T: PartialEq + TryFrom<RawUnit> + Into<RawUnit> + Copy> {
     pub label: String,
     pub id: String,
     pub value: T,
 }
 
-#[function_component(UnitOutput2)]
-pub fn unit_input2<T: Unit + PartialEq + TryFrom<RawUnit> + Into<RawUnit> + Copy + 'static>(
-    UnitOutputProps2 { id, label, value }: &UnitOutputProps2<T>,
+#[function_component(UnitOutput)]
+pub fn unit_input<T: Unit + PartialEq + TryFrom<RawUnit> + Into<RawUnit> + Copy + 'static>(
+    UnitOutputProps { id, label, value }: &UnitOutputProps<T>,
 ) -> Html {
     let selected_unit = use_state(|| Some(T::get_si_unit_label().abbreviation));
     let value_str = {

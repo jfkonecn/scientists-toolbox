@@ -1,5 +1,7 @@
 use std::fmt;
 
+use crate::units::*;
+
 pub mod steam;
 
 #[derive(Debug, PartialEq)]
@@ -193,24 +195,24 @@ impl SolidLiquidVapor {
 #[derive(Debug, PartialEq)]
 pub struct PtvEntry {
     // in K
-    pub temperature: f64,
+    pub temperature: Temperature,
     // in Pa
-    pub pressure: f64,
+    pub pressure: Pressure,
     pub phase_region: PhaseRegion,
     // J/kg
-    pub internal_energy: f64,
+    pub internal_energy: EnergyPerMass,
     // J/kg
-    pub enthalpy: f64,
+    pub enthalpy: EnergyPerMass,
     // J/(kg * K)
-    pub entropy: f64,
+    pub entropy: EnergyPerMassTemperature,
     /// Isochoric Heat Capacity
     /// Heat Capacity at constant volume (J/(kg*K))
-    pub cv: f64,
+    pub cv: EnergyPerMassTemperature,
     // isobaric heat capacity
     // Heat Capacity at constant pressure (J/(kg*K))
-    pub cp: f64,
+    pub cp: EnergyPerMassTemperature,
     // m/s
-    pub speed_of_sound: f64,
+    pub speed_of_sound: Velocity,
     // in m3 / kg
-    pub specific_volume: f64,
+    pub specific_volume: SpecificVolume,
 }

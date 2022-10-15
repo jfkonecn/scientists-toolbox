@@ -41,7 +41,7 @@ macro_rules! units {
         $(
         #[derive(Debug, PartialEq, Clone, Copy)]
         pub struct $si_unit_name {
-            value: f64
+            pub value: f64
         }
 
         #[allow(dead_code)]
@@ -69,7 +69,7 @@ macro_rules! units {
         $(
         #[derive(Debug, PartialEq, Clone, Copy)]
         pub struct $unit_name {
-            value: f64
+            pub value: f64
         }
 
         #[allow(dead_code)]
@@ -81,7 +81,7 @@ macro_rules! units {
             }
 
             pub fn abs(self) -> f64 {
-                self.value
+                self.value.abs()
             }
         }
 
@@ -103,6 +103,23 @@ macro_rules! units {
             $unit_name($unit_name),
             )*
         }
+
+        #[allow(dead_code)]
+        impl $type_name {
+            pub fn abs(self) -> f64 {
+                self.into_si_unit().value.abs()
+            }
+        }
+
+        impl std::ops::Sub for $type_name {
+            type Output = Self;
+
+            fn sub(self, other: Self) -> Self::Output {
+                let diff = self.into_si_unit() - other.into_si_unit();
+                $type_name::$si_unit_name(diff)
+            }
+        }
+
         impl TryFrom<RawUnit> for $type_name {
             type Error = ParseUnitError;
 
@@ -213,6 +230,12 @@ units! {
             "m",
             "meters",
         },
+        Km {
+            "km",
+            "kilometers",
+            |x| x * 1000f64,
+            |x| x / 1000f64,
+        },
         Ft {
             "ft",
             "feet",
@@ -258,8 +281,8 @@ units! {
         F {
             "°F",
             "degrees fahrenheit",
-            |x| ((x - 273.15f64) * 9f64 / 5f64) + 32f64,
             |x| ((x - 32f64) * 5f64 / 9f64) + 273.15,
+            |x| ((x - 273.15f64) * 9f64 / 5f64) + 32f64,
         },
         R {
             "°R",
@@ -276,14 +299,14 @@ units! {
         KPa {
             "kPa",
             "kilopascals",
-            |x| x / 1000f64,
             |x| x * 1000f64,
+            |x| x / 1000f64,
         },
         Lbf {
             "lbf/in²",
             "pounds-force per square inch",
-            |x| x / 6894.76,
             |x| x * 6894.76,
+            |x| x / 6894.76,
         }
     }
     EnergyPerMass {
@@ -340,16 +363,14 @@ units! {
 mod tests {
     use super::*;
     use assert_approx_eq::assert_approx_eq;
+
     #[test]
     fn length_conversion() {
         assert_approx_eq!(Length::M(M::new(1f64)).into_si_unit(), M::new(1f64));
+        assert_approx_eq!(Length::Ft(Ft::new(1f64)), Length::M(M::new(1f64 / 3.28084)));
         assert_approx_eq!(
-            Length::Ft(Ft::new(1f64)).into_si_unit(),
-            M::new(1f64 / 3.28084)
-        );
-        assert_approx_eq!(
-            Length::Inches(Inches::new(1f64)).into_si_unit(),
-            M::new(1f64 / (3.28084 * 12f64))
+            Length::Inches(Inches::new(1f64)),
+            Length::M(M::new(1f64 / (3.28084 * 12f64)))
         );
     }
 
@@ -366,9 +387,15 @@ mod tests {
     #[test]
     fn temperature_conversion() {
         assert_approx_eq!(Temperature::K(K::new(1f64)).into_si_unit(), K::new(1f64));
-        assert_approx_eq!(Temperature::C(C::new(1f64)).into_si_unit(), K::new(274.15));
-        assert_approx_eq!(Temperature::F(F::new(1f64)).into_si_unit(), K::new(255.928));
-        assert_approx_eq!(Temperature::R(R::new(1f64)).into_si_unit(), K::new(0.556));
+        assert_approx_eq!(Temperature::C(C::new(1f64)), Temperature::K(K::new(274.15)));
+        assert_approx_eq!(
+            Temperature::F(F::new(1f64)),
+            Temperature::K(K::new(255.92777777777775))
+        );
+        assert_approx_eq!(
+            Temperature::R(R::new(200f64)),
+            Temperature::K(K::new(111.11111111111111))
+        );
     }
 
     #[test]
@@ -379,8 +406,12 @@ mod tests {
             Pa::new(1000f64)
         );
         assert_approx_eq!(
-            Pressure::Lbf(Lbf::new(1f64)).into_si_unit(),
-            Pa::new(6894.76)
+            Pressure::KPa(KPa::new(1f64)),
+            Pressure::Pa(Pa::new(1000f64))
+        );
+        assert_approx_eq!(
+            Pressure::Lbf(Lbf::new(1f64)),
+            Pressure::Pa(Pa::new(6894.76))
         );
     }
 
@@ -391,8 +422,8 @@ mod tests {
             JPerKg::new(1f64)
         );
         assert_approx_eq!(
-            EnergyPerMass::BtuPerLbsm(BtuPerLbsm::new(1f64)).into_si_unit(),
-            JPerKg::new(2.2 * 1055.06)
+            EnergyPerMass::BtuPerLbsm(BtuPerLbsm::new(1f64)),
+            EnergyPerMass::JPerKg(JPerKg::new(2.2 * 1055.06))
         );
     }
 
@@ -403,8 +434,8 @@ mod tests {
             JPerKgK::new(1f64)
         );
         assert_approx_eq!(
-            EnergyPerMassTemperature::BtuPerLbsmR(BtuPerLbsmR::new(1f64)).into_si_unit(),
-            JPerKgK::new(2.2 * 1055.06 * 5f64 / 9f64)
+            EnergyPerMassTemperature::BtuPerLbsmR(BtuPerLbsmR::new(1f64)),
+            EnergyPerMassTemperature::JPerKgK(JPerKgK::new(2.2 * 1055.06 * 5f64 / 9f64))
         );
     }
 
@@ -415,8 +446,8 @@ mod tests {
             MPerSec::new(1f64)
         );
         assert_approx_eq!(
-            Velocity::FtPerSec(FtPerSec::new(1f64)).into_si_unit(),
-            MPerSec::new(1f64 / 3.28084)
+            Velocity::FtPerSec(FtPerSec::new(1f64)),
+            Velocity::MPerSec(MPerSec::new(1f64 / 3.28084))
         );
     }
 
@@ -427,8 +458,8 @@ mod tests {
             M3PerKg::new(1f64)
         );
         assert_approx_eq!(
-            SpecificVolume::Ft3PerLbsm(Ft3PerLbsm::new(1f64)).into_si_unit(),
-            M3PerKg::new(2.20462 / 35.3147)
+            SpecificVolume::Ft3PerLbsm(Ft3PerLbsm::new(1f64)),
+            SpecificVolume::M3PerKg(M3PerKg::new(2.20462 / 35.3147))
         );
     }
 }

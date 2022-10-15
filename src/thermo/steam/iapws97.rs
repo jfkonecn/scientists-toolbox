@@ -26,9 +26,9 @@ struct SpecificRegionPoint {
     gamma_pi_tau: f64,
 }
 
-fn get_sat_pressure(temperature: f64) -> Result<f64, OutOfRange> {
-    match temperature {
-        t if t > CRITICAL_TEMPERATURE => Result::Err(OutOfRange::AboveCriticalTemperature),
+fn get_sat_pressure(temperature: K) -> Result<Pa, OutOfRange> {
+    match temperature.value {
+        t if t > CRITICAL_TEMPERATURE.value => Result::Err(OutOfRange::AboveCriticalTemperature),
         t => {
             let sat_temp_ratio = t / 1f64;
             let theta = sat_temp_ratio
@@ -47,14 +47,14 @@ fn get_sat_pressure(temperature: f64) -> Result<f64, OutOfRange> {
                 (2f64 * c) / (-b + f64::powf(f64::powi(b, 2) - 4f64 * a * c, 0.5)),
                 4,
             ) * 1e6;
-            Result::Ok(pressure)
+            Result::Ok(Pa::new(pressure))
         }
     }
 }
 
-fn get_sat_temperature(pressure: f64) -> Result<f64, OutOfRange> {
-    match pressure {
-        p if p > CRITICAL_PRESSURE => Err(OutOfRange::AboveCriticalPressure),
+fn get_sat_temperature(pressure: Pa) -> Result<K, OutOfRange> {
+    match pressure.value {
+        p if p > CRITICAL_PRESSURE.value => Err(OutOfRange::AboveCriticalPressure),
         p => {
             let beta = f64::powf(p / 1e6, 0.25);
             let e = f64::powi(beta, 2)
@@ -76,26 +76,26 @@ fn get_sat_temperature(pressure: f64) -> Result<f64, OutOfRange> {
                     0.5,
                 ))
                 / 2.0;
-            Ok(temperature)
+            Ok(K::new(temperature))
         }
     }
 }
 
-fn get_boundary_34_pressure(temperature: f64) -> Result<f64, OutOfRange> {
-    match temperature {
-        t if t < CRITICAL_TEMPERATURE => Err(OutOfRange::BelowCriticalTemperature),
+fn get_boundary_34_pressure(temperature: K) -> Result<Pa, OutOfRange> {
+    match temperature.value {
+        t if t < CRITICAL_TEMPERATURE.value => Err(OutOfRange::BelowCriticalTemperature),
         t => {
             let theta = t / 1.0;
             let pressure = (iapws97_constants::BOUNDARY_34[0].n
                 + iapws97_constants::BOUNDARY_34[1].n * theta
                 + iapws97_constants::BOUNDARY_34[2].n * f64::powi(theta, 2))
                 * 1e6;
-            Ok(pressure)
+            Ok(Pa::new(pressure))
         }
     }
 }
 
-fn extract_pressure(query: &SteamQuery) -> Option<f64> {
+fn extract_pressure(query: &SteamQuery) -> Option<Pressure> {
     match query {
         SteamQuery::PtQuery(PtPoint {
             pressure: p,
@@ -117,7 +117,7 @@ fn extract_pressure(query: &SteamQuery) -> Option<f64> {
     }
 }
 
-fn extract_temperature(query: &SteamQuery) -> Option<f64> {
+fn extract_temperature(query: &SteamQuery) -> Option<Temperature> {
     match query {
         SteamQuery::PtQuery(PtPoint {
             pressure: _,
@@ -132,8 +132,8 @@ fn extract_temperature(query: &SteamQuery) -> Option<f64> {
 }
 
 fn check_if_out_of_range(query: &SteamQuery) -> Result<(), OutOfRange> {
-    let opt_p = extract_pressure(&query);
-    let opt_t = extract_temperature(&query);
+    let opt_p = extract_pressure(&query).map(|x| x.into_si_unit().value);
+    let opt_t = extract_temperature(&query).map(|x| x.into_si_unit().value);
     match (opt_p, opt_t) {
         (_, Some(t)) if t < 273.15 => Err(OutOfRange::TemperatureLow),
         (_, Some(t)) if t > 2000.0 + 273.15 => Err(OutOfRange::TemperatureHigh),
@@ -145,10 +145,11 @@ fn check_if_out_of_range(query: &SteamQuery) -> Result<(), OutOfRange> {
 }
 
 fn get_region_from_pt_point(pt_point: &PtPoint) -> Result<Iapws97Region, OutOfRange> {
-    let t = pt_point.temperature;
-    let p = pt_point.pressure;
-    let opt_sat_p_result = get_sat_pressure(t);
-    let opt_boundary_result = get_boundary_34_pressure(t);
+    let t = pt_point.temperature.into_si_unit();
+    let p = pt_point.pressure.into_si_unit().value;
+    let opt_sat_p_result = get_sat_pressure(t).map(|x| x.value);
+    let opt_boundary_result = get_boundary_34_pressure(t).map(|x| x.value);
+    let t = t.value;
     match (opt_sat_p_result, opt_boundary_result) {
         (_, _) if t > 273.15 + 800.0 => Ok(Iapws97Region::Region5),
         (_, _) if t > 273.15 + 600.0 => Ok(Iapws97Region::Region2),
@@ -179,16 +180,16 @@ fn get_region_from_sat_query(sat_query: &SatQuery) -> Result<(PtPoint, Iapws97Re
         SatQuery::SatTQuery {
             temperature: t,
             phase_region: _,
-        } => get_sat_pressure(*t).map(|p| PtPoint {
-            pressure: p,
+        } => get_sat_pressure((*t).into_si_unit()).map(|p| PtPoint {
+            pressure: Pressure::Pa(p),
             temperature: *t,
         }),
         SatQuery::SatPQuery {
             pressure: p,
             phase_region: _,
-        } => get_sat_temperature(*p).map(|t| PtPoint {
+        } => get_sat_temperature((*p).into_si_unit()).map(|t| PtPoint {
             pressure: *p,
-            temperature: t,
+            temperature: Temperature::K(t),
         }),
     };
     pt_result.map(|pt| (pt, region))
@@ -198,8 +199,8 @@ fn create_entry_from_region_point(
     specific_region_point: SpecificRegionPoint,
     phase_region: PhaseRegion,
 ) -> PtvEntry {
-    let temperature = specific_region_point.point.temperature;
-    let pressure = specific_region_point.point.pressure;
+    let temperature = specific_region_point.point.temperature.into_si_unit().value;
+    let pressure = specific_region_point.point.pressure.into_si_unit().value;
     let pi = specific_region_point.pi;
     let tau = specific_region_point.tau;
     let gamma = specific_region_point.gamma;
@@ -209,32 +210,41 @@ fn create_entry_from_region_point(
     let gamma_tau_tau = specific_region_point.gamma_tau_tau;
     let gamma_pi_tau = specific_region_point.gamma_pi_tau;
 
+    let internal_energy = GAS_CONSTANT.value * temperature * (tau * gamma_tau - pi * gamma_pi);
+    let enthalpy = GAS_CONSTANT.value * temperature * tau * gamma_tau;
+    let entropy = GAS_CONSTANT.value * (tau * gamma_tau - gamma);
+    let cv = GAS_CONSTANT.value
+        * (-f64::powi(-tau, 2) * gamma_tau_tau
+            + f64::powi(gamma_pi - tau * gamma_pi_tau, 2) / gamma_pi_pi);
+    let cp = GAS_CONSTANT.value * -f64::powi(-tau, 2) * gamma_tau_tau;
+    let speed_of_sound = f64::sqrt(
+        GAS_CONSTANT.value
+            * temperature
+            * ((f64::powi(gamma_pi, 2))
+                / ((f64::powi(gamma_pi - tau * gamma_pi_tau, 2)
+                    / (f64::powi(tau, 2) * gamma_tau_tau))
+                    - gamma_pi_pi)),
+    );
+    let specific_volume = pi * (gamma_pi * GAS_CONSTANT.value * temperature) / pressure;
     PtvEntry {
-        temperature,
-        pressure,
+        temperature: Temperature::K(K::new(temperature)),
+        pressure: Pressure::Pa(Pa::new(pressure)),
         phase_region,
-        internal_energy: GAS_CONSTANT * temperature * (tau * gamma_tau - pi * gamma_pi),
-        enthalpy: GAS_CONSTANT * temperature * tau * gamma_tau,
-        entropy: GAS_CONSTANT * (tau * gamma_tau - gamma),
-        cv: GAS_CONSTANT
-            * (-f64::powi(-tau, 2) * gamma_tau_tau
-                + f64::powi(gamma_pi - tau * gamma_pi_tau, 2) / gamma_pi_pi),
-        cp: GAS_CONSTANT * -f64::powi(-tau, 2) * gamma_tau_tau,
-        speed_of_sound: f64::sqrt(
-            GAS_CONSTANT
-                * temperature
-                * ((f64::powi(gamma_pi, 2))
-                    / ((f64::powi(gamma_pi - tau * gamma_pi_tau, 2)
-                        / (f64::powi(tau, 2) * gamma_tau_tau))
-                        - gamma_pi_pi)),
-        ),
-        specific_volume: pi * (gamma_pi * GAS_CONSTANT * temperature) / pressure,
+        internal_energy: EnergyPerMass::JPerKg(JPerKg::new(internal_energy)),
+        enthalpy: EnergyPerMass::JPerKg(JPerKg::new(enthalpy)),
+        entropy: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(entropy)),
+        cv: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(cv)),
+        cp: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(cp)),
+        speed_of_sound: Velocity::MPerSec(MPerSec::new(speed_of_sound)),
+        specific_volume: SpecificVolume::M3PerKg(M3PerKg::new(specific_volume)),
     }
 }
 
 fn gibbs_method(point: &PtPoint) -> PtvEntry {
-    let pi = point.pressure / 16.53e6;
-    let tau = 1386.0 / point.temperature;
+    let pressure = point.pressure.into_si_unit().value;
+    let temperature = point.temperature.into_si_unit().value;
+    let pi = pressure / 16.53e6;
+    let tau = 1386.0 / temperature;
     let mut gamma = 0f64;
     let mut gamma_pi = 0f64;
     let mut gamma_pi_pi = 0f64;
@@ -279,7 +289,9 @@ fn vapor_method(
     ideal_points: &[JnRegionPoint],
     residual_points: &[IjnRegionPoint],
 ) -> PtvEntry {
-    let pi = point.pressure / 1.0e6;
+    let pressure = point.pressure.into_si_unit().value;
+    let temperature = point.temperature.into_si_unit().value;
+    let pi = pressure / 1.0e6;
     let mut gamma = f64::ln(pi);
     let mut gamma_pi = 1.0 / pi;
     let mut gamma_pi_pi = -1.0 / f64::powi(pi, 2);
@@ -287,8 +299,8 @@ fn vapor_method(
     let mut gamma_tau_tau = 0f64;
     let mut gamma_pi_tau = 0f64;
     let phase_info = match (
-        point.temperature > CRITICAL_TEMPERATURE,
-        point.pressure > CRITICAL_PRESSURE,
+        temperature > CRITICAL_TEMPERATURE.value,
+        pressure > CRITICAL_PRESSURE.value,
     ) {
         (true, true) => PhaseRegion::SupercriticalFluid,
         (true, false) => PhaseRegion::Gas,
@@ -334,7 +346,7 @@ fn region3_by_specific_volume(pt_point: &PtPoint, specific_volume: f64) -> PtvEn
     let density = 1f64 / specific_volume;
     let n1 = iapws97_constants::REGION_3_N1.n;
     let delta = density / 322f64;
-    let temperature = pt_point.temperature;
+    let temperature = pt_point.temperature.into_si_unit().value;
     let tau = 647.096 / temperature;
     let mut phi = n1 * f64::ln(delta);
     let mut phi_delta = n1 / delta;
@@ -355,42 +367,42 @@ fn region3_by_specific_volume(pt_point: &PtPoint, specific_volume: f64) -> PtvEn
         phi_delta_tau += n * i * f64::powf(delta, i - 1f64) * j * f64::powf(tau, j - 1f64);
     }
 
-    let pressure = phi_delta * delta * density * GAS_CONSTANT * temperature;
+    let pressure = phi_delta * delta * density * GAS_CONSTANT.value * temperature;
 
-    let internal_energy = tau * phi_tau * GAS_CONSTANT * temperature;
-    let enthalpy = (tau * phi_tau + delta * phi_delta) * GAS_CONSTANT * temperature;
-    let entropy = (tau * phi_tau - phi) * GAS_CONSTANT;
-    let cv = -f64::powi(tau, 2) * phi_tau_tau * GAS_CONSTANT;
+    let internal_energy = tau * phi_tau * GAS_CONSTANT.value * temperature;
+    let enthalpy = (tau * phi_tau + delta * phi_delta) * GAS_CONSTANT.value * temperature;
+    let entropy = (tau * phi_tau - phi) * GAS_CONSTANT.value;
+    let cv = -f64::powi(tau, 2) * phi_tau_tau * GAS_CONSTANT.value;
     let cp = (-f64::powi(tau, 2) * phi_tau_tau
         + f64::powi(delta * phi_delta - delta * tau * phi_delta_tau, 2)
             / (2f64 * delta * phi_delta + f64::powi(delta, 2) * phi_delta_delta))
-        * GAS_CONSTANT;
+        * GAS_CONSTANT.value;
 
     let speed_of_sound = f64::sqrt(
         (2f64 * delta * phi_delta + f64::powi(delta, 2) * phi_delta_delta
             - f64::powi(delta * phi_delta - delta * tau * phi_delta_tau, 2)
                 / (f64::powi(tau, 2) * phi_tau_tau))
-            * GAS_CONSTANT
+            * GAS_CONSTANT.value
             * temperature,
     );
     PtvEntry {
-        temperature,
-        pressure,
+        temperature: Temperature::K(K::new(temperature)),
+        pressure: Pressure::Pa(Pa::new(pressure)),
         phase_region: PhaseRegion::SupercriticalFluid,
-        internal_energy,
-        enthalpy,
-        entropy,
-        cv,
-        cp,
-        speed_of_sound,
-        specific_volume,
+        internal_energy: EnergyPerMass::JPerKg(JPerKg::new(internal_energy)),
+        enthalpy: EnergyPerMass::JPerKg(JPerKg::new(enthalpy)),
+        entropy: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(entropy)),
+        cv: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(cv)),
+        cp: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(cp)),
+        speed_of_sound: Velocity::MPerSec(MPerSec::new(speed_of_sound)),
+        specific_volume: SpecificVolume::M3PerKg(M3PerKg::new(specific_volume)),
     }
 }
 
 fn region3_method(point: &PtPoint) -> Result<PtvEntry, SteamQueryErr> {
     let f = |x| {
         let entry = region3_by_specific_volume(&point, x);
-        entry.pressure - point.pressure
+        entry.pressure.into_si_unit().value - point.pressure.into_si_unit().value
     };
     secant_method(f, 1f64 / 500f64, 1e-4)
         .map(|x| region3_by_specific_volume(&point, x))
@@ -401,10 +413,11 @@ fn get_entry_from_pt_point(
     point: &PtPoint,
     region: Iapws97Region,
 ) -> Result<PtvEntry, SteamQueryErr> {
+    let temperature = point.temperature.into_si_unit().value;
     match region {
         Iapws97Region::Region1 | Iapws97Region::Region4 => Ok(gibbs_method(&point)),
         Iapws97Region::Region2 => Ok(vapor_method(
-            540f64 / point.temperature,
+            540f64 / temperature,
             0.5,
             &point,
             iapws97_constants::REGION_2_IDEAL,
@@ -412,7 +425,7 @@ fn get_entry_from_pt_point(
         )),
         Iapws97Region::Region3 => region3_method(&point),
         Iapws97Region::Region5 => Ok(vapor_method(
-            1000f64 / point.temperature,
+            1000f64 / temperature,
             0f64,
             &point,
             iapws97_constants::REGION_5_IDEAL,
@@ -432,40 +445,41 @@ fn interpolate_entry(
     let phase_info_result = LiquidVapor::new(liq_frac, vap_frac)
         .map(|x| PhaseRegion::Composite(CompositePhaseRegion::LiquidVapor(x)))
         .map_err(|err| SteamQueryErr::CompositePhaseRegionErr(err));
-    let temperature = interpolate_entry_property(|x| x.temperature);
-    let pressure = interpolate_entry_property(|x| x.pressure);
-    let internal_energy = interpolate_entry_property(|x| x.internal_energy);
-    let enthalpy = interpolate_entry_property(|x| x.enthalpy);
-    let entropy = interpolate_entry_property(|x| x.entropy);
-    let cv = interpolate_entry_property(|x| x.cv);
-    let cp = interpolate_entry_property(|x| x.cp);
-    let speed_of_sound = interpolate_entry_property(|x| x.speed_of_sound);
-    let specific_volume = 1f64 / interpolate_entry_property(|x| 1f64 / x.specific_volume);
+    let temperature = interpolate_entry_property(|x| x.temperature.into_si_unit().value);
+    let pressure = interpolate_entry_property(|x| x.pressure.into_si_unit().value);
+    let internal_energy = interpolate_entry_property(|x| x.internal_energy.into_si_unit().value);
+    let enthalpy = interpolate_entry_property(|x| x.enthalpy.into_si_unit().value);
+    let entropy = interpolate_entry_property(|x| x.entropy.into_si_unit().value);
+    let cv = interpolate_entry_property(|x| x.cv.into_si_unit().value);
+    let cp = interpolate_entry_property(|x| x.cp.into_si_unit().value);
+    let speed_of_sound = interpolate_entry_property(|x| x.speed_of_sound.into_si_unit().value);
+    let specific_volume =
+        1f64 / interpolate_entry_property(|x| 1f64 / x.specific_volume.into_si_unit().value);
     phase_info_result.map(|phase_region| PtvEntry {
-        temperature,
-        pressure,
+        temperature: Temperature::K(K::new(temperature)),
+        pressure: Pressure::Pa(Pa::new(pressure)),
         phase_region,
-        internal_energy,
-        enthalpy,
-        entropy,
-        cv,
-        cp,
-        speed_of_sound,
-        specific_volume,
+        internal_energy: EnergyPerMass::JPerKg(JPerKg::new(internal_energy)),
+        enthalpy: EnergyPerMass::JPerKg(JPerKg::new(enthalpy)),
+        entropy: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(entropy)),
+        cv: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(cv)),
+        cp: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(cp)),
+        speed_of_sound: Velocity::MPerSec(MPerSec::new(speed_of_sound)),
+        specific_volume: SpecificVolume::M3PerKg(M3PerKg::new(specific_volume)),
     })
 }
 
 fn iterate_pt_entry_solution(
-    pressure: f64,
+    pressure: Pa,
     target_value: f64,
     get_prop_value: fn(entry: &PtvEntry) -> f64,
 ) -> Result<PtvEntry, SteamQueryErr> {
     let liquid_entry_result = get_steam_table_entry(SteamQuery::SatQuery(SatQuery::SatPQuery {
-        pressure,
+        pressure: Pressure::Pa(pressure),
         phase_region: SteamNonCriticalPhaseRegion::Liquid,
     }));
     let vapor_entry_result = get_steam_table_entry(SteamQuery::SatQuery(SatQuery::SatPQuery {
-        pressure,
+        pressure: Pressure::Pa(pressure),
         phase_region: SteamNonCriticalPhaseRegion::Vapor,
     }));
 
@@ -481,8 +495,8 @@ fn iterate_pt_entry_solution(
         _ => {
             let f = |temperature| {
                 let query_result = get_steam_table_entry(SteamQuery::PtQuery(PtPoint {
-                    pressure,
-                    temperature,
+                    pressure: Pressure::Pa(pressure),
+                    temperature: Temperature::K(K::new(temperature)),
                 }));
                 if let Ok(entry) = query_result {
                     get_prop_value(&entry) - target_value
@@ -494,8 +508,8 @@ fn iterate_pt_entry_solution(
                 .map_err(|err| SteamQueryErr::FailedToConverge(err))
                 .and_then(|temperature| {
                     get_steam_table_entry(SteamQuery::PtQuery(PtPoint {
-                        pressure,
-                        temperature,
+                        pressure: Pressure::Pa(pressure),
+                        temperature: Temperature::K(K::new(temperature)),
                     }))
                 })
         }
@@ -517,11 +531,15 @@ pub fn get_steam_table_entry(query: SteamQuery) -> Result<PtvEntry, SteamQueryEr
             SteamQuery::EntropyPQuery {
                 pressure: p,
                 entropy: e,
-            } => iterate_pt_entry_solution(p, e, |point| point.entropy),
+            } => iterate_pt_entry_solution(p.into_si_unit(), e.into_si_unit().value, |point| {
+                point.entropy.into_si_unit().value
+            }),
             SteamQuery::EnthalpyPQuery {
                 pressure: p,
                 enthalpy: e,
-            } => iterate_pt_entry_solution(p, e, |point| point.enthalpy),
+            } => iterate_pt_entry_solution(p.into_si_unit(), e.into_si_unit().value, |point| {
+                point.enthalpy.into_si_unit().value
+            }),
         })
 }
 
@@ -569,389 +587,389 @@ mod tests {
     get_steam_table_valid_entry_tests! {
         steam_table_01: (
             SteamQuery::PtQuery(PtPoint {
-                temperature: 750.0,
-                pressure: 78.309563916917e6,
+                temperature: Temperature::K(K::new(750.0)),
+                pressure: Pressure::Pa(Pa::new(78.309563916917e6)),
             }),
             Ok(PtvEntry {
-                temperature: 750.0,
-                pressure: 78.309563916917e6,
+                temperature: Temperature::K(K::new(750.0)),
+                pressure: Pressure::KPa(KPa::new(78.309563916917e3)),
                 phase_region: PhaseRegion::SupercriticalFluid,
-                internal_energy: 2102.069317626429e3,
-                enthalpy: 2258.688445460262e3,
-                entropy: 4.469719056217e3,
-                cv: 2.71701677121e3,
-                cp: 6.341653594791e3,
-                speed_of_sound: 760.696040876798,
-                specific_volume: 1.0 / 500.0,
+                internal_energy: EnergyPerMass::JPerKg(JPerKg::new(2102.069317626429e3)),
+                enthalpy: EnergyPerMass::JPerKg(JPerKg::new(2258.688445460262e3)),
+                entropy: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(4.469719056217e3)),
+                cv: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(2.71701677121e3)),
+                cp: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(6.341653594791e3)),
+                speed_of_sound: Velocity::MPerSec(MPerSec::new(760.696040876798)),
+                specific_volume: SpecificVolume::M3PerKg(M3PerKg::new(1.0 / 500.0)),
             })
         ),
         steam_table_02: (
             SteamQuery::PtQuery(PtPoint {
-                temperature: 473.15,
-                pressure: 40e6,
+                temperature: Temperature::K(K::new(473.15)),
+                pressure: Pressure::Pa(Pa::new(40e6)),
             }),
             Ok(PtvEntry {
-                temperature: 473.15,
-                pressure: 40e6,
+                temperature: Temperature::K(K::new(473.15)),
+                pressure: Pressure::Pa(Pa::new(40e6)),
                 phase_region: PhaseRegion::NonCritical(NonCriticalPhaseRegion::Liquid),
-                internal_energy: 825.228016170348e3,
-                enthalpy: 870.124259682489e3,
-                entropy: 2.275752861241e3,
-                cv: 3.292858637199e3,
-                cp: 4.315767590903e3,
-                speed_of_sound: 1457.418351596083,
-                specific_volume: 0.001122406088,
+                internal_energy: EnergyPerMass::JPerKg(JPerKg::new(825.228016170348e3,)),
+                enthalpy: EnergyPerMass::JPerKg(JPerKg::new(870.124259682489e3)),
+                entropy: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(2.275752861241e3)),
+                cv: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(3.292858637199e3)),
+                cp: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(4.315767590903e3)),
+                speed_of_sound: Velocity::MPerSec(MPerSec::new(1457.418351596083)),
+                specific_volume: SpecificVolume::M3PerKg(M3PerKg::new(0.001122406088)),
             })
         ),
         steam_table_03: (
             SteamQuery::PtQuery(PtPoint {
-                temperature: 2000.0,
-                pressure: 30e6,
+                temperature: Temperature::K(K::new(2000.0)),
+                pressure: Pressure::Pa(Pa::new(30e6)),
             }),
             Ok(PtvEntry {
-                temperature: 2000.0,
-                pressure: 30e6,
+                temperature: Temperature::K(K::new(2000.0)),
+                pressure: Pressure::Pa(Pa::new(30e6)),
                 phase_region: PhaseRegion::SupercriticalFluid,
-                internal_energy: 5637.070382521894e3,
-                enthalpy: 6571.226038618478e3,
-                entropy: 8.536405231138e3,
-                cv: 2.395894362358e3,
-                cp: 2.885698818781e3,
-                speed_of_sound: 1067.369478777425,
-                specific_volume: 0.03113852187,
+                internal_energy: EnergyPerMass::JPerKg(JPerKg::new(5637.070382521894e3)),
+                enthalpy: EnergyPerMass::JPerKg(JPerKg::new(6571.226038618478e3)),
+                entropy: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(8.536405231138e3)),
+                cv: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(2.395894362358e3)),
+                cp: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(2.885698818781e3)),
+                speed_of_sound: Velocity::MPerSec(MPerSec::new(1067.369478777425)),
+                specific_volume: SpecificVolume::M3PerKg(M3PerKg::new(0.03113852187)),
             })
         ),
         steam_table_04: (
             SteamQuery::PtQuery(PtPoint {
-                temperature: 823.15,
-                pressure: 14e6,
+                temperature: Temperature::K(K::new(823.15)),
+                pressure: Pressure::Pa(Pa::new(14e6)),
             }),
             Ok(PtvEntry {
-                temperature: 823.15,
-                pressure: 14e6,
+                temperature: Temperature::K(K::new(823.15)),
+                pressure: Pressure::Pa(Pa::new(14e6)),
                 phase_region: PhaseRegion::Gas,
-                internal_energy: 3114.302136294585e3,
-                enthalpy: 3460.987255128561e3,
-                entropy: 6.564768889364e3,
-                cv: 1.892708832325e3,
-                cp: 2.666558503968e3,
-                speed_of_sound: 666.050616844223,
-                specific_volume: 0.024763222774,
+                internal_energy: EnergyPerMass::JPerKg(JPerKg::new(3114.302136294585e3)),
+                enthalpy: EnergyPerMass::JPerKg(JPerKg::new(3460.987255128561e3)),
+                entropy: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(6.564768889364e3)),
+                cv: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(1.892708832325e3)),
+                cp: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(2.666558503968e3)),
+                speed_of_sound: Velocity::MPerSec(MPerSec::new(666.050616844223)),
+                specific_volume: SpecificVolume::M3PerKg(M3PerKg::new(0.024763222774)),
             })
         ),
         steam_table_05: (
             SteamQuery::SatQuery(SatQuery::SatPQuery {
-                pressure: 0.2e6,
+                pressure: Pressure::Pa(Pa::new(0.2e6)),
                 phase_region: SteamNonCriticalPhaseRegion::Liquid,
             }),
             Ok(PtvEntry {
-                temperature: 393.361545936488,
-                pressure: 0.2e6,
+                temperature: Temperature::K(K::new(393.361545936488)),
+                pressure: Pressure::Pa(Pa::new(0.2e6)),
                 phase_region: PhaseRegion::NonCritical(NonCriticalPhaseRegion::Liquid),
-                internal_energy: 504471.741847973,
-                enthalpy: 504683.84552926,
-                entropy: 1530.0982011075,
-                cv: 3666.99397284121,
-                cp: 4246.73524917536,
-                speed_of_sound: 1520.69128792808,
-                specific_volume: 0.00106051840643552,
+                internal_energy: EnergyPerMass::JPerKg(JPerKg::new(504471.741847973)),
+                enthalpy: EnergyPerMass::JPerKg(JPerKg::new(504683.84552926)),
+                entropy: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(1530.0982011075)),
+                cv: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(3666.99397284121)),
+                cp: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(4246.73524917536)),
+                speed_of_sound: Velocity::MPerSec(MPerSec::new(1520.69128792808)),
+                specific_volume: SpecificVolume::M3PerKg(M3PerKg::new(0.00106051840643552)),
             })
         ),
         steam_table_06: (
             SteamQuery::SatQuery(SatQuery::SatPQuery {
-                pressure: 0.2e6,
+                pressure: Pressure::Pa(Pa::new(0.2e6)),
                 phase_region: SteamNonCriticalPhaseRegion::Vapor,
             }),
             Ok(PtvEntry {
-                temperature: 393.361545936488,
-                pressure: 0.2e6,
+                temperature: Temperature::K(K::new(393.361545936488)),
+                pressure: Pressure::Pa(Pa::new(0.2e6)),
                 phase_region: PhaseRegion::NonCritical(NonCriticalPhaseRegion::Vapor),
-                internal_energy: 2529094.32835793,
-                enthalpy: 2706241.34137425,
-                entropy: 7126.8563914686,
-                cv: 1615.96336473298,
-                cp: 2175.22318865273,
-                speed_of_sound: 481.883535821489,
-                specific_volume: 0.885735065081644,
+                internal_energy: EnergyPerMass::JPerKg(JPerKg::new(2529094.32835793)),
+                enthalpy: EnergyPerMass::JPerKg(JPerKg::new(2706241.34137425)),
+                entropy: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(7126.8563914686)),
+                cv: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(1615.96336473298)),
+                cp: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(2175.22318865273)),
+                speed_of_sound: Velocity::MPerSec(MPerSec::new(481.883535821489)),
+                specific_volume: SpecificVolume::M3PerKg(M3PerKg::new(0.885735065081644)),
             })
         ),
         steam_table_07: (
             SteamQuery::SatQuery(SatQuery::SatTQuery {
-                temperature: 393.361545936488,
+                temperature: Temperature::K(K::new(393.361545936488)),
                 phase_region: SteamNonCriticalPhaseRegion::Liquid,
             }),
             Ok(PtvEntry {
-                temperature: 393.361545936488,
-                pressure: 0.2e6,
+                temperature: Temperature::K(K::new(393.361545936488)),
+                pressure: Pressure::Pa(Pa::new(0.2e6)),
                 phase_region: PhaseRegion::NonCritical(NonCriticalPhaseRegion::Liquid),
-                internal_energy: 504471.741847973,
-                enthalpy: 504683.84552926,
-                entropy: 1530.0982011075,
-                cv: 3666.99397284121,
-                cp: 4246.73524917536,
-                speed_of_sound: 1520.69128792808,
-                specific_volume: 0.00106051840643552,
+                internal_energy: EnergyPerMass::JPerKg(JPerKg::new(504471.741847973)),
+                enthalpy: EnergyPerMass::JPerKg(JPerKg::new(504683.84552926)),
+                entropy: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(1530.0982011075)),
+                cv: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(3666.99397284121)),
+                cp: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(4246.73524917536)),
+                speed_of_sound: Velocity::MPerSec(MPerSec::new(1520.69128792808)),
+                specific_volume: SpecificVolume::M3PerKg(M3PerKg::new(0.00106051840643552)),
             })
         ),
         steam_table_08: (
             SteamQuery::SatQuery(SatQuery::SatTQuery {
-                temperature: 393.361545936488,
+                temperature: Temperature::K(K::new(393.361545936488)),
                 phase_region: SteamNonCriticalPhaseRegion::Vapor,
             }),
             Ok(PtvEntry {
-                temperature: 393.361545936488,
-                pressure: 0.2e6,
+                temperature: Temperature::K(K::new(393.361545936488)),
+                pressure: Pressure::Pa(Pa::new(0.2e6)),
                 phase_region: PhaseRegion::NonCritical(NonCriticalPhaseRegion::Vapor),
-                internal_energy: 2529094.32835793,
-                enthalpy: 2706241.34137425,
-                entropy: 7126.8563914686,
-                cv: 1615.96336473298,
-                cp: 2175.22318865273,
-                speed_of_sound: 481.883535821489,
-                specific_volume: 0.885735065081644,
+                internal_energy: EnergyPerMass::JPerKg(JPerKg::new(2529094.32835793)),
+                enthalpy: EnergyPerMass::JPerKg(JPerKg::new(2706241.34137425)),
+                entropy: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(7126.8563914686)),
+                cv: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(1615.96336473298)),
+                cp: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(2175.22318865273)),
+                speed_of_sound: Velocity::MPerSec(MPerSec::new(481.883535821489)),
+                specific_volume: SpecificVolume::M3PerKg(M3PerKg::new(0.885735065081644)),
             })
         ),
         steam_table_09: (
             SteamQuery::EntropyPQuery {
-                entropy: 4.469719056217e3,
-                pressure: 78.309563916917e6,
+                entropy: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(4.469719056217e3)),
+                pressure: Pressure::Pa(Pa::new(78.309563916917e6)),
             },
             Ok(PtvEntry {
-                temperature: 750.0,
-                pressure: 78.309563916917e6,
+                temperature: Temperature::K(K::new(750.0)),
+                pressure: Pressure::Pa(Pa::new(78.309563916917e6)),
                 phase_region: PhaseRegion::SupercriticalFluid,
-                internal_energy: 2102.069317626429e3,
-                enthalpy: 2258.688445460262e3,
-                entropy: 4.469719056217e3,
-                cv: 2.71701677121e3,
-                cp: 6.341653594791e3,
-                speed_of_sound: 760.696040876798,
-                specific_volume: 1.0 / 500.0,
+                internal_energy: EnergyPerMass::JPerKg(JPerKg::new(2102.069317626429e3)),
+                enthalpy: EnergyPerMass::JPerKg(JPerKg::new(2258.688445460262e3)),
+                entropy: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(4.469719056217e3)),
+                cv: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(2.71701677121e3)),
+                cp: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(6.341653594791e3)),
+                speed_of_sound: Velocity::MPerSec(MPerSec::new(760.696040876798)),
+                specific_volume: SpecificVolume::M3PerKg(M3PerKg::new(1.0 / 500.0)),
             })
         ),
         steam_table_10: (
             SteamQuery::EntropyPQuery {
-                entropy: 2.275752861241e3,
-                pressure: 40e6,
+                pressure: Pressure::Pa(Pa::new(40e6)),
+                entropy: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(2.275752861241e3)),
             },
             Ok(PtvEntry {
-                temperature: 473.15,
-                pressure: 40e6,
+                temperature: Temperature::K(K::new(473.15)),
+                pressure: Pressure::Pa(Pa::new(40e6)),
                 phase_region: PhaseRegion::NonCritical(NonCriticalPhaseRegion::Liquid),
-                internal_energy: 825.228016170348e3,
-                enthalpy: 870.124259682489e3,
-                entropy: 2.275752861241e3,
-                cv: 3.292858637199e3,
-                cp: 4.315767590903e3,
-                speed_of_sound: 1457.418351596083,
-                specific_volume: 0.001122406088,
+                internal_energy: EnergyPerMass::JPerKg(JPerKg::new(825.228016170348e3,)),
+                enthalpy: EnergyPerMass::JPerKg(JPerKg::new(870.124259682489e3)),
+                entropy: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(2.275752861241e3)),
+                cv: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(3.292858637199e3)),
+                cp: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(4.315767590903e3)),
+                speed_of_sound: Velocity::MPerSec(MPerSec::new(1457.418351596083)),
+                specific_volume: SpecificVolume::M3PerKg(M3PerKg::new(0.001122406088)),
             })
         ),
         steam_table_11: (
             SteamQuery::EntropyPQuery {
-                entropy: 8.536405231138e3,
-                pressure: 30e6,
+                entropy: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(8.536405231138e3)),
+                pressure: Pressure::Pa(Pa::new(30e6)),
             },
             Ok(PtvEntry {
-                temperature: 2000.0,
-                pressure: 30e6,
+                temperature: Temperature::K(K::new(2000.0)),
+                pressure: Pressure::Pa(Pa::new(30e6)),
                 phase_region: PhaseRegion::SupercriticalFluid,
-                internal_energy: 5637.070382521894e3,
-                enthalpy: 6571.226038618478e3,
-                entropy: 8.536405231138e3,
-                cv: 2.395894362358e3,
-                cp: 2.885698818781e3,
-                speed_of_sound: 1067.369478777425,
-                specific_volume: 0.03113852187,
+                internal_energy: EnergyPerMass::JPerKg(JPerKg::new(5637.070382521894e3)),
+                enthalpy: EnergyPerMass::JPerKg(JPerKg::new(6571.226038618478e3)),
+                entropy: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(8.536405231138e3)),
+                cv: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(2.395894362358e3)),
+                cp: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(2.885698818781e3)),
+                speed_of_sound: Velocity::MPerSec(MPerSec::new(1067.369478777425)),
+                specific_volume: SpecificVolume::M3PerKg(M3PerKg::new(0.03113852187)),
             })
         ),
         steam_table_12: (
             SteamQuery::EntropyPQuery {
-                entropy: 6.564768889364e3,
-                pressure: 14e6,
+                entropy: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(6.564768889364e3)),
+                pressure: Pressure::Pa(Pa::new(14e6)),
             },
             Ok(PtvEntry {
-                temperature: 823.15,
-                pressure: 14e6,
+                temperature: Temperature::K(K::new(823.15)),
+                pressure: Pressure::Pa(Pa::new(14e6)),
                 phase_region: PhaseRegion::Gas,
-                internal_energy: 3114.302136294585e3,
-                enthalpy: 3460.987255128561e3,
-                entropy: 6.564768889364e3,
-                cv: 1.892708832325e3,
-                cp: 2.666558503968e3,
-                speed_of_sound: 666.050616844223,
-                specific_volume: 0.024763222774,
+                internal_energy: EnergyPerMass::JPerKg(JPerKg::new(3114.302136294585e3)),
+                enthalpy: EnergyPerMass::JPerKg(JPerKg::new(3460.987255128561e3)),
+                entropy: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(6.564768889364e3)),
+                cv: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(1.892708832325e3)),
+                cp: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(2.666558503968e3)),
+                speed_of_sound: Velocity::MPerSec(MPerSec::new(666.050616844223)),
+                specific_volume: SpecificVolume::M3PerKg(M3PerKg::new(0.024763222774)),
             })
         ),
         steam_table_13: (
             SteamQuery::EntropyPQuery {
-                entropy: 6.6858e3,
-                pressure: 10e3,
+                entropy: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(6.6858e3)),
+                pressure: Pressure::Pa(Pa::new(10e3)),
             },
             Ok(PtvEntry {
-                temperature: 318.957548207023,
-                pressure: 10e3,
+                temperature: Temperature::K(K::new(318.957548207023)),
+                pressure: Pressure::Pa(Pa::new(10e3)),
                 phase_region: PhaseRegion::Composite(
                     CompositePhaseRegion::LiquidVapor(
                         LiquidVapor::new(1.0 - 0.8049124470781327, 0.8049124470781327).unwrap()
                     )
                 ),
-                internal_energy: 1999135.82661328,
-                enthalpy: 2117222.94886314,
-                entropy: 6.6858e3,
-                cv: 1966.28009225455,
-                cp: 2377.86300751001,
-                speed_of_sound: 655.005141924186,
-                specific_volume: 1.0 / 193.16103883,
+                internal_energy: EnergyPerMass::JPerKg(JPerKg::new(1999135.82661328)),
+                enthalpy: EnergyPerMass::JPerKg(JPerKg::new(2117222.94886314)),
+                entropy: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(6.6858e3)),
+                cv: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(1966.28009225455)),
+                cp: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(2377.86300751001)),
+                speed_of_sound: Velocity::MPerSec(MPerSec::new(655.005141924186)),
+                specific_volume: SpecificVolume::M3PerKg(M3PerKg::new(1.0 / 193.16103883)),
             })
         ),
         steam_table_14: (
             SteamQuery::EnthalpyPQuery {
-                enthalpy: 2258.688445460262e3,
-                pressure: 78.309563916917e6,
+                pressure: Pressure::Pa(Pa::new(78.309563916917e6)),
+                enthalpy: EnergyPerMass::JPerKg(JPerKg::new(2258.688445460262e3)),
             },
             Ok(PtvEntry {
-                temperature: 750.0,
-                pressure: 78.309563916917e6,
+                temperature: Temperature::K(K::new(750.0)),
+                pressure: Pressure::Pa(Pa::new(78.309563916917e6)),
                 phase_region: PhaseRegion::SupercriticalFluid,
-                internal_energy: 2102.069317626429e3,
-                enthalpy: 2258.688445460262e3,
-                entropy: 4.469719056217e3,
-                cv: 2.71701677121e3,
-                cp: 6.341653594791e3,
-                speed_of_sound: 760.696040876798,
-                specific_volume: 1.0 / 500.0,
+                internal_energy: EnergyPerMass::JPerKg(JPerKg::new(2102.069317626429e3)),
+                enthalpy: EnergyPerMass::JPerKg(JPerKg::new(2258.688445460262e3)),
+                entropy: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(4.469719056217e3)),
+                cv: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(2.71701677121e3)),
+                cp: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(6.341653594791e3)),
+                speed_of_sound: Velocity::MPerSec(MPerSec::new(760.696040876798)),
+                specific_volume: SpecificVolume::M3PerKg(M3PerKg::new(1.0 / 500.0)),
             })
         ),
         steam_table_15: (
             SteamQuery::EnthalpyPQuery {
-                enthalpy: 870.124259682489e3,
-                pressure: 40e6,
+                enthalpy: EnergyPerMass::JPerKg(JPerKg::new(870.124259682489e3)),
+                pressure: Pressure::Pa(Pa::new(40e6)),
             },
             Ok(PtvEntry {
-                temperature: 473.15,
-                pressure: 40e6,
+                temperature: Temperature::K(K::new(473.15)),
+                pressure: Pressure::Pa(Pa::new(40e6)),
                 phase_region: PhaseRegion::NonCritical(NonCriticalPhaseRegion::Liquid),
-                internal_energy: 825.228016170348e3,
-                enthalpy: 870.124259682489e3,
-                entropy: 2.275752861241e3,
-                cv: 3.292858637199e3,
-                cp: 4.315767590903e3,
-                speed_of_sound: 1457.418351596083,
-                specific_volume: 0.001122406088,
+                internal_energy: EnergyPerMass::JPerKg(JPerKg::new(825.228016170348e3,)),
+                enthalpy: EnergyPerMass::JPerKg(JPerKg::new(870.124259682489e3)),
+                entropy: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(2.275752861241e3)),
+                cv: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(3.292858637199e3)),
+                cp: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(4.315767590903e3)),
+                speed_of_sound: Velocity::MPerSec(MPerSec::new(1457.418351596083)),
+                specific_volume: SpecificVolume::M3PerKg(M3PerKg::new(0.001122406088)),
             })
         ),
         steam_table_16: (
             SteamQuery::EnthalpyPQuery {
-                enthalpy: 6571.226038618478e3,
-                pressure: 30e6,
+                enthalpy: EnergyPerMass::JPerKg(JPerKg::new(6571.226038618478e3)),
+                pressure: Pressure::Pa(Pa::new(30e6)),
             },
             Ok(PtvEntry {
-                temperature: 2000.0,
-                pressure: 30e6,
+                temperature: Temperature::K(K::new(2000.0)),
+                pressure: Pressure::Pa(Pa::new(30e6)),
                 phase_region: PhaseRegion::SupercriticalFluid,
-                internal_energy: 5637.070382521894e3,
-                enthalpy: 6571.226038618478e3,
-                entropy: 8.536405231138e3,
-                cv: 2.395894362358e3,
-                cp: 2.885698818781e3,
-                speed_of_sound: 1067.369478777425,
-                specific_volume: 0.03113852187,
+                internal_energy: EnergyPerMass::JPerKg(JPerKg::new(5637.070382521894e3)),
+                enthalpy: EnergyPerMass::JPerKg(JPerKg::new(6571.226038618478e3)),
+                entropy: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(8.536405231138e3)),
+                cv: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(2.395894362358e3)),
+                cp: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(2.885698818781e3)),
+                speed_of_sound: Velocity::MPerSec(MPerSec::new(1067.369478777425)),
+                specific_volume: SpecificVolume::M3PerKg(M3PerKg::new(0.03113852187)),
             })
         ),
         steam_table_17: (
             SteamQuery::EnthalpyPQuery {
-                enthalpy: 3460.987255128561e3,
-                pressure: 14e6,
+                pressure: Pressure::Pa(Pa::new(14e6)),
+                enthalpy: EnergyPerMass::JPerKg(JPerKg::new(3460.987255128561e3)),
             },
             Ok(PtvEntry {
-                temperature: 823.15,
-                pressure: 14e6,
+                temperature: Temperature::K(K::new(823.15)),
+                pressure: Pressure::Pa(Pa::new(14e6)),
                 phase_region: PhaseRegion::Gas,
-                internal_energy: 3114.302136294585e3,
-                enthalpy: 3460.987255128561e3,
-                entropy: 6.564768889364e3,
-                cv: 1.892708832325e3,
-                cp: 2.666558503968e3,
-                speed_of_sound: 666.050616844223,
-                specific_volume: 0.024763222774,
+                internal_energy: EnergyPerMass::JPerKg(JPerKg::new(3114.302136294585e3)),
+                enthalpy: EnergyPerMass::JPerKg(JPerKg::new(3460.987255128561e3)),
+                entropy: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(6.564768889364e3)),
+                cv: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(1.892708832325e3)),
+                cp: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(2.666558503968e3)),
+                speed_of_sound: Velocity::MPerSec(MPerSec::new(666.050616844223)),
+                specific_volume: SpecificVolume::M3PerKg(M3PerKg::new(0.024763222774)),
             })
         ),
         steam_table_18: (
             SteamQuery::EnthalpyPQuery {
-                enthalpy: 2117222.94886314,
-                pressure: 10e3,
+                enthalpy: EnergyPerMass::JPerKg(JPerKg::new(2117222.94886314)),
+                pressure: Pressure::Pa(Pa::new(10e3)),
             },
             Ok(PtvEntry {
-                temperature: 318.957548207023,
-                pressure: 10e3,
+                temperature: Temperature::K(K::new(318.957548207023)),
+                pressure: Pressure::Pa(Pa::new(10e3)),
                 phase_region: PhaseRegion::Composite(
                     CompositePhaseRegion::LiquidVapor(
                         LiquidVapor::new(1.0 - 0.8049124470781327, 0.8049124470781327).unwrap()
                     )
                 ),
-                internal_energy: 1999135.82661328,
-                enthalpy: 2117222.94886314,
-                entropy: 6.6858e3,
-                cv: 1966.28009225455,
-                cp: 2377.86300751001,
-                speed_of_sound: 655.005141924186,
-                specific_volume: 1.0 / 193.16103883,
+                internal_energy: EnergyPerMass::JPerKg(JPerKg::new(1999135.82661328)),
+                enthalpy: EnergyPerMass::JPerKg(JPerKg::new(2117222.94886314)),
+                entropy: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(6.6858e3)),
+                cv: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(1966.28009225455)),
+                cp: EnergyPerMassTemperature::JPerKgK(JPerKgK::new(2377.86300751001)),
+                speed_of_sound: Velocity::MPerSec(MPerSec::new(655.005141924186)),
+                specific_volume: SpecificVolume::M3PerKg(M3PerKg::new(1.0 / 193.16103883)),
             })
         ),
         steam_table_19: (
             SteamQuery::PtQuery(PtPoint {
-                temperature:273.0,
-                pressure: 40e6,
+                temperature:Temperature::K(K::new(273.0)),
+                pressure: Pressure::Pa(Pa::new(40e6)),
             }),
             Err(SteamQueryErr::OutOfRange(OutOfRange::TemperatureLow))
         ),
         steam_table_20: (
             SteamQuery::PtQuery(PtPoint {
-                temperature:273.0,
-                pressure: 60e6,
+                temperature:Temperature::K(K::new(273.0)),
+                pressure: Pressure::Pa(Pa::new(60e6)),
             }),
             Err(SteamQueryErr::OutOfRange(OutOfRange::TemperatureLow))
         ),
         steam_table_21: (
             SteamQuery::PtQuery(PtPoint {
-                temperature:2001.0 + 273.15,
-                pressure: 40e6,
+                temperature:Temperature::C(C::new(2001f64)),
+                pressure: Pressure::Pa(Pa::new(40e6)),
             }),
             Err(SteamQueryErr::OutOfRange(OutOfRange::TemperatureHigh))
         ),
         steam_table_22: (
             SteamQuery::PtQuery(PtPoint {
-                temperature:801.0 + 273.0,
-                pressure: 60e6,
+                temperature:Temperature::C(C::new(801f64)),
+                pressure: Pressure::Pa(Pa::new(60e6)),
             }),
             Err(SteamQueryErr::OutOfRange(OutOfRange::TemperatureHigh))
         ),
         steam_table_23: (
             SteamQuery::PtQuery(PtPoint {
-                temperature:799.0 + 273.15,
-                pressure: -1.0,
+                temperature:Temperature::C(C::new(799f64)),
+                pressure: Pressure::Pa(Pa::new(-1.0)),
             }),
             Err(SteamQueryErr::OutOfRange(OutOfRange::PressureLow))
         ),
         steam_table_24: (
             SteamQuery::PtQuery(PtPoint {
-                temperature:801.0 + 273.15,
-                pressure: -1.0,
+                temperature:Temperature::C(C::new(801f64)),
+                pressure: Pressure::Pa(Pa::new(-1.0)),
             }),
             Err(SteamQueryErr::OutOfRange(OutOfRange::PressureLow))
         ),
         steam_table_25: (
             SteamQuery::PtQuery(PtPoint {
-                temperature:801.0 + 273.15,
-                pressure: 51e6,
+                temperature:Temperature::C(C::new(801f64)),
+                pressure: Pressure::Pa(Pa::new(51e6)),
             }),
             Err(SteamQueryErr::OutOfRange(OutOfRange::TemperatureHigh))
         ),
         steam_table_26: (
             SteamQuery::PtQuery(PtPoint {
-                temperature:799.0 + 273.15,
-                pressure: 101e6,
+                temperature:Temperature::K(K::new(799.0 + 273.15)),
+                pressure: Pressure::Pa(Pa::new(101e6)),
             }),
             Err(SteamQueryErr::OutOfRange(OutOfRange::PressureHigh))
         ),

@@ -10,9 +10,11 @@ use crate::thermo::steam::*;
 use crate::thermo::*;
 use crate::ui::js_bindings::console_log;
 use crate::ui::thermo::steam_table::steam_table_form::iapws97::get_steam_table_entry;
+use crate::units::EnergyPerMass;
 use crate::units::Ft;
 use crate::units::Length;
 use crate::units::M;
+use crate::units::*;
 use web_sys::console;
 use yew::prelude::*;
 
@@ -21,16 +23,14 @@ fn entry_to_html(entry_opt: &Option<Result<PtvEntry, SteamQueryErr>>) -> Html {
         Some(Ok(entry)) => {
             html! {
                 <fieldset class={classes!("grid", "grid-cols-1", "md:grid-cols-2", "lg:grid-cols-3")}>
-                    <UnitOutput
+                    <UnitOutput<Pressure>
                         id={"pressure_output"}
                         label={"Pressure"}
-                        unit={"Pa"}
                         value={entry.pressure}
                     />
-                    <UnitOutput
+                    <UnitOutput<Temperature>
                         id={"temperature_output"}
                         label={"Temperature"}
-                        unit={"K"}
                         value={entry.temperature}
                     />
                     <StrOutput
@@ -39,46 +39,39 @@ fn entry_to_html(entry_opt: &Option<Result<PtvEntry, SteamQueryErr>>) -> Html {
                         value={entry.phase_region.to_string()}
                         output_type={OutputType::Success}
                     />
-                    <UnitOutput
+                    <UnitOutput<EnergyPerMass>
                         id={"internal_energy_output"}
                         label={"Internal Energy"}
-                        unit={"J/kg"}
                         value={entry.internal_energy}
                     />
-                    <UnitOutput
+                    <UnitOutput<EnergyPerMass>
                         id={"enthalpy_output"}
                         label={"Enthalpy"}
-                        unit={"J/kg"}
                         value={entry.enthalpy}
                     />
-                    <UnitOutput
+                    <UnitOutput<EnergyPerMassTemperature>
                         id={"entropy_output"}
                         label={"Entropy"}
-                        unit={"J/(kg * K)"}
                         value={entry.entropy}
                     />
-                    <UnitOutput
+                    <UnitOutput<EnergyPerMassTemperature>
                         id={"cv_output"}
                         label={"Isochoric Heat Capacity"}
-                        unit={"J/(kg * K)"}
                         value={entry.cv}
                     />
-                    <UnitOutput
+                    <UnitOutput<EnergyPerMassTemperature>
                         id={"cp_output"}
                         label={"Isobaric Heat Capacity"}
-                        unit={"J/(kg * K)"}
                         value={entry.cp}
                     />
-                    <UnitOutput
+                    <UnitOutput<Velocity>
                         id={"speed_of_sound_output"}
                         label={"Speed of Sound"}
-                        unit={"m/s"}
                         value={entry.speed_of_sound}
                     />
-                    <UnitOutput
+                    <UnitOutput<SpecificVolume>
                         id={"specific_volume_output"}
                         label={"Specific Volume"}
-                        unit={"m^3/kg"}
                         value={entry.specific_volume}
                     />
                 </fieldset>
@@ -209,7 +202,7 @@ fn steam_table_input(SteamTableInputProps { onchange }: &SteamTableInputProps) -
         })
     };
 
-    let pressure_opt = use_state(|| -> Option<f64> { None });
+    let pressure_opt = use_state(|| -> Option<Pressure> { None });
     let on_pressure_change = {
         let pressure_opt = pressure_opt.clone();
         Callback::from(move |val| {
@@ -217,7 +210,7 @@ fn steam_table_input(SteamTableInputProps { onchange }: &SteamTableInputProps) -
         })
     };
 
-    let temperature_opt = use_state(|| -> Option<f64> { None });
+    let temperature_opt = use_state(|| -> Option<Temperature> { None });
     let on_temperature_change = {
         let temperature_opt = temperature_opt.clone();
         Callback::from(move |val| {
@@ -225,7 +218,7 @@ fn steam_table_input(SteamTableInputProps { onchange }: &SteamTableInputProps) -
         })
     };
 
-    let entropy_opt = use_state(|| -> Option<f64> { None });
+    let entropy_opt = use_state(|| -> Option<EnergyPerMassTemperature> { None });
     let on_entropy_change = {
         let entropy_opt = entropy_opt.clone();
         Callback::from(move |val| {
@@ -233,7 +226,7 @@ fn steam_table_input(SteamTableInputProps { onchange }: &SteamTableInputProps) -
         })
     };
 
-    let enthalpy_opt = use_state(|| -> Option<f64> { None });
+    let enthalpy_opt = use_state(|| -> Option<EnergyPerMass> { None });
     let on_enthalpy_change = {
         let enthalpy_opt = enthalpy_opt.clone();
         Callback::from(move |val| {
@@ -325,7 +318,7 @@ fn steam_table_input(SteamTableInputProps { onchange }: &SteamTableInputProps) -
             | Some(UiSteamQuery::EnthalpyPQuery)
             | Some(UiSteamQuery::EntropyPQuery) => {
                     html! {
-        <UnitInput id={"pressure"} label={"Pressure"} unit={"Pa"} onchange={on_pressure_change} />
+        <UnitInput<Pressure> id={"pressure"} label={"Pressure"} onchange={on_pressure_change} />
                     }
             },
             Some(UiSteamQuery::SatTQuery)
@@ -342,7 +335,7 @@ fn steam_table_input(SteamTableInputProps { onchange }: &SteamTableInputProps) -
             | Some(UiSteamQuery::SatTQuery)
              => {
                     html! {
-        <UnitInput id={"temperature"} label={"Temperature"} unit={"K"} onchange={on_temperature_change}/>
+        <UnitInput<Temperature> id={"temperature"} label={"Temperature"} onchange={on_temperature_change}/>
                     }
             },
             Some(UiSteamQuery::SatPQuery)
@@ -360,7 +353,7 @@ fn steam_table_input(SteamTableInputProps { onchange }: &SteamTableInputProps) -
             Some(UiSteamQuery::EnthalpyPQuery)
              => {
                     html! {
-        <UnitInput id={"enthalpy"} label={"Enthalpy"} unit={"J/kg"} onchange={on_enthalpy_change}/>
+        <UnitInput<EnergyPerMass> id={"enthalpy"} label={"Enthalpy"} onchange={on_enthalpy_change}/>
                     }
             },
             Some(UiSteamQuery::SatPQuery)
@@ -379,7 +372,7 @@ fn steam_table_input(SteamTableInputProps { onchange }: &SteamTableInputProps) -
             Some(UiSteamQuery::EntropyPQuery)
              => {
                     html! {
-        <UnitInput id={"entropy"} label={"Entropy"} unit={"J/(kg * K)"} onchange={on_entropy_change}/>
+        <UnitInput<EnergyPerMassTemperature> id={"entropy"} label={"Entropy"} onchange={on_entropy_change}/>
                     }
             },
             Some(UiSteamQuery::SatPQuery)

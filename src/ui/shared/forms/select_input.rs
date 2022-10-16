@@ -55,7 +55,7 @@ pub fn select_input<T: PartialEq + TryFrom<String> + Display + Clone + Into<Stri
             <select
                 id={id.clone()}
                 ref={select_ref}
-                class={classes!("inline-block", "w-full", "h-full", "px-3", "py-2", "bg-white")}
+                class={classes!("bg-white")}
                 onchange={on_select_change}
             >
                 {

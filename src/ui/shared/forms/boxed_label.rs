@@ -24,9 +24,21 @@ pub fn boxed_label(
         LabelType::Output(OutputType::Error) => "bg-red-100",
     };
     html! {
-        <div class={classes!("relative", "mx-3", "p-1", "mb-3", "mt-8", "h-12",  "w-72", "border-2", "rounded-md", "border-gray-200", bg_color )}>
+        <div class={classes!("relative", "mx-3", "p-1", "mb-3", "mt-8", "w-72", "border-2", "rounded-md", "border-gray-200", bg_color )}>
             <label for={id.clone()} class={classes!("absolute", "-top-5", "left-2", "bg-white", "px-2", "border-2", "rounded-md", "border-gray-200",)}>{label}</label>
-            {children.clone()}
+            <div class={classes!(
+                "[&>*]:inline-block",
+                "[&>*]:p-3",
+                "[&>*]:w-[calc(100%-theme(spacing.2)-theme(spacing.2))]",
+                "[&>*]:h-full",
+                "[&>*]:mx-2",
+                "my-2",
+                "flex",
+                "flex-col",
+                "space-y-1"
+            )}>
+                {children.clone()}
+            </div>
         </div>
     }
 }

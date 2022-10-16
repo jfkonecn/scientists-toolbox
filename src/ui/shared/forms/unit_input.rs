@@ -96,13 +96,12 @@ pub fn unit_input<T: Unit + PartialEq + TryFrom<RawUnit> + Into<RawUnit> + 'stat
                 pattern="[0-9]*"
                 id={id.clone()}
                 placeholder={"enter a number"}
-                class={classes!("inline-block", "px-3", "py-2", "w-[calc(100%-theme(spacing.24))]", "h-full")}
                 oninput={on_value_input}
                 />
                 <select
                     id={format!("{}-unit", id)}
+                    class={classes!("bg-white")}
                     onchange={on_unit_change}
-                    class={classes!("inline-block", "w-20", "h-full", "ml-4", "px-3", "py-2", "bg-white")}
                 >
                     {
                         options.into_iter().map(|x| {

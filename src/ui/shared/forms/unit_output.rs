@@ -50,14 +50,13 @@ pub fn unit_input<T: Unit + PartialEq + TryFrom<RawUnit> + Into<RawUnit> + Copy 
         <BoxedLabel id={id.clone()} label={label.clone()} label_type={LabelType::Output(OutputType::Success)}>
             <output
                 id={id.clone()}
-                class={classes!("inline-block", "px-3", "py-2", "w-[calc(100%-theme(spacing.24))]", "h-full")}
             >
                 {value_str}
             </output>
             <select
                 id={format!("{}-unit", id)}
                 onchange={on_unit_change}
-                class={classes!("inline-block", "w-20", "h-full", "ml-4", "px-3", "py-2", "bg-sky-100")}
+                class={classes!("bg-sky-100")}
             >
                 {
                     options.into_iter().map(|x| {

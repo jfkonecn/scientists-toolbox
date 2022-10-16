@@ -80,7 +80,7 @@ fn app_shell(AppShellProps { children }: &AppShellProps) -> Html {
         };
     html! {
         <div class={classes!("flex", "items-center", "justify-center")}>
-            <div class={classes!("w-full", "lg:w-[theme(screens.lg)]")}>
+            <div class={classes!("w-full", "xl:w-[theme(screens.xl)]")}>
                 <header class={classes!("bg-sky-100","flex", "items-center", "justify-center", "h-20", "p-10")}>
                     <ul class={classes!("flex", "items-center", "h-full")}>
                         <li>

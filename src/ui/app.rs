@@ -1,3 +1,4 @@
+use super::logo::*;
 use super::shared::search_button::*;
 use super::splash::Splash;
 use super::thermo::steam_table::steam_table_form::*;
@@ -83,9 +84,9 @@ fn app_shell(AppShellProps { children }: &AppShellProps) -> Html {
             <div class={classes!("w-full", "xl:w-[theme(screens.xl)]")}>
                 <header class={classes!("bg-sky-100","flex", "items-center", "justify-center", "h-20", "p-10")}>
                     <ul class={classes!("flex", "items-center", "h-full")}>
-                        <li>
+                        <li class="w-20">
                             <Link<MainRoute> classes={classes!("hover:underline")} to={MainRoute::Home}>
-                                {"Scientist's Toolbox"}
+                                <Logo aria_label={"Homepage"}  class={"w-full stroke-red-900"}/>
                             </Link<MainRoute>>
                         </li>
                     </ul>

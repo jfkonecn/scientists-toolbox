@@ -1,0 +1,9 @@
+{
+  "short_name": "Benzene Box",
+  "name": "Benzene Box",
+  "icons": [],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "rgb(224 242 254)",
+  "background_color": "#ffffff"
+}

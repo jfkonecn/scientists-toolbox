@@ -8,6 +8,16 @@ install_crate = "rustfmt"
 command = "cargo"
 args = ["fmt", "--all", "--", "--check"]
 
+[tasks.post-build]
+command = "npm"
+args = ["run", "post-build"]
+
+[tasks.watch-post-build]
+command = "npm"
+args = ["run", "post-build"]
+watch = true
+# watch = { no_git_ignore = true, postpone = true, watch = ["./dist/*.css"] }
+
 [tasks.app-build-dev]
 command = "trunk"
 args = ["build"]
@@ -52,24 +62,17 @@ args = ["test", "--release"]
 run_task = { name = [
     "watch-serve-dev", 
     "watch-tailwind-dev", 
-    "watch-test-dev"
+    "watch-test-dev",
+    "watch-post-build"
     ], parallel = true }
-
-[tasks.watch-html-tests]
-command = "cargo"
-args = ["test", "should_create_correct_form", "--", "--show-output"]
-watch = true
-dependencies = [
-    "form-maker-dev", 
-    "form-maker-derive-dev"
-]
 
 [tasks.dev]
 dependencies = [
     "format",
     "tailwind-dev",
     "app-build-dev",
-    "test-dev"
+    "test-dev",
+    "post-build"
 ]
 
 [tasks.release]
@@ -77,5 +80,6 @@ dependencies = [
     "check-format",
     "tailwind-release",
     "app-build-release",
-    "test-release"
+    "test-release",
+    "post-build"
 ]

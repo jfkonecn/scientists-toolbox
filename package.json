@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "generate-assets": "pwa-asset-generator ./logo.svg ./dist/assets -f -i ./dist/index.html -m ./dist/manifest.json",
+    "create-sw": "esbuild --outfile=dist/sw.js --bundle sw.ts && workbox injectManifest",
+    "post-build": "npm run generate-assets && npm run create-sw"
   },
   "repository": {
     "type": "git",
@@ -17,6 +19,10 @@
   },
   "homepage": "https://github.com/jfkonecn/scientists-toolbox#readme",
   "devDependencies": {
-    "tailwindcss": "^3.1.3"
+    "esbuild": "^0.15.12",
+    "pwa-asset-generator": "^6.2.0",
+    "tailwindcss": "^3.1.3",
+    "workbox-cli": "^6.5.4",
+    "workbox-precaching": "^6.5.4"
   }
 }

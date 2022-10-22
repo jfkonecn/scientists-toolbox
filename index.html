@@ -7,11 +7,22 @@
     <meta name="keywords" content="Engineering, Calculator, Scientific">
     <meta name="author" content="John Konecny">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scientist's Toolbox</title>
+    <meta name="theme-color" content="rgb(224 242 254)">
+    <title>Benzene Box</title>
     <link data-trunk rel="css" href="index.css" rel="stylesheet">
+    <link data-trunk rel="copy-file" href="manifest.json">
+    <link rel="manifest" rel="manifest" href="/manifest.json">
+    <script src="/sw.js"></script>
 </head>
 
 <body>
+
+
+    <script>
+        if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.register("/sw.js");
+        }
+    </script>
 </body>
 
 </html>

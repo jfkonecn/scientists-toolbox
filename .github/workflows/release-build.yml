@@ -30,17 +30,14 @@ jobs:
       run: |
         npm install
     
-    - name: Install Trunk 
-      run: |
-        cargo install --locked trunk
-    
-    - name: Install Cargo Generate
-      run: |
-        cargo install cargo-generate
-    
     - name: Install WASM Pack 
       run: |
         cargo install wasm-pack
+        rustup target add wasm32-unknown-unknown
+        
+    - name: Install Trunk 
+      run: |
+        cargo install --locked trunk
     
     - name: Install cargo-make
       uses: actions-rs/cargo@v1
@@ -55,3 +52,13 @@ jobs:
         args: release
       env: { CARGO_MAKE_RUN_CODECOV: true }
     
+    
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v3.1.1
+      with:
+        # Artifact name
+        name: build
+        # A file, directory or wildcard pattern that describes what to upload
+        path: dist
+        error: Failed to find dist folder
+

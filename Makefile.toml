@@ -16,7 +16,6 @@ args = ["run", "post-build"]
 command = "npm"
 args = ["run", "post-build"]
 watch = true
-# watch = { no_git_ignore = true, postpone = true, watch = ["./dist/*.css"] }
 
 [tasks.app-build-dev]
 command = "trunk"
@@ -50,8 +49,9 @@ command = "cargo"
 args = ["test"]
 
 [tasks.watch-test-dev]
-command = "cargo"
-args = ["test"]
+dependencies = [
+    "test-dev"
+]
 watch = true
 
 [tasks.test-release]
@@ -62,7 +62,6 @@ args = ["test", "--release"]
 run_task = { name = [
     "watch-serve-dev", 
     "watch-tailwind-dev", 
-    "watch-test-dev",
     "watch-post-build"
     ], parallel = true }
 
@@ -71,8 +70,8 @@ dependencies = [
     "format",
     "tailwind-dev",
     "app-build-dev",
-    "test-dev",
-    "post-build"
+    "post-build",
+    "test-dev"
 ]
 
 [tasks.release]
@@ -80,6 +79,6 @@ dependencies = [
     "check-format",
     "tailwind-release",
     "app-build-release",
+    "post-build",
     "test-release",
-    "post-build"
 ]

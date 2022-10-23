@@ -51,6 +51,7 @@ impl fmt::Display for PhaseRegion {
 }
 
 #[derive(Debug, PartialEq)]
+#[allow(dead_code)]
 pub enum NonCriticalPhaseRegion {
     // Pressure is less than both the sublimation and vaporization curve and is below the critical temperature
     Vapor,
@@ -61,6 +62,7 @@ pub enum NonCriticalPhaseRegion {
 }
 
 #[derive(Debug, PartialEq)]
+#[allow(dead_code)]
 pub enum CompositePhaseRegion {
     SolidLiquid(SolidLiquid),
     LiquidVapor(LiquidVapor),
@@ -69,6 +71,7 @@ pub enum CompositePhaseRegion {
 }
 
 #[derive(Debug, PartialEq)]
+#[allow(dead_code)]
 pub enum CompositePhaseRegionErr {
     FractionsDoNotAddUpToOne,
     FractionsMustBePositive,
@@ -81,6 +84,7 @@ pub struct SolidLiquid {
 }
 
 impl SolidLiquid {
+    #[allow(dead_code)]
     pub fn new(solid_frac: f64, liquid_frac: f64) -> Result<SolidLiquid, CompositePhaseRegionErr> {
         if solid_frac + liquid_frac == 1.0 {
             Ok(SolidLiquid {
@@ -135,6 +139,7 @@ pub struct SolidVapor {
 }
 
 impl SolidVapor {
+    #[allow(dead_code)]
     pub fn new(solid_frac: f64, vapor_frac: f64) -> Result<SolidVapor, CompositePhaseRegionErr> {
         if solid_frac + vapor_frac == 1.0 {
             Ok(SolidVapor {
@@ -163,6 +168,7 @@ pub struct SolidLiquidVapor {
 }
 
 impl SolidLiquidVapor {
+    #[allow(dead_code)]
     pub fn new(
         solid_frac: f64,
         liquid_frac: f64,

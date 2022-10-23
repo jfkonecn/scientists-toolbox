@@ -8,14 +8,9 @@ use super::super::super::shared::forms::*;
 use crate::numerical_methods::*;
 use crate::thermo::steam::*;
 use crate::thermo::*;
-use crate::ui::js_bindings::console_log;
 use crate::ui::thermo::steam_table::steam_table_form::iapws97::get_steam_table_entry;
 use crate::units::EnergyPerMass;
-use crate::units::Ft;
-use crate::units::Length;
-use crate::units::M;
 use crate::units::*;
-use web_sys::console;
 use yew::prelude::*;
 
 fn entry_to_html(entry_opt: &Option<Result<PtvEntry, SteamQueryErr>>) -> Html {

@@ -1,10 +1,7 @@
-name: Release Build
+name: Build
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  workflow_call:
 
 env:
   CARGO_TERM_COLOR: always

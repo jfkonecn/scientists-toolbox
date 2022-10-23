@@ -16,7 +16,7 @@ jobs:
     
     strategy:
       matrix:
-        node-version: [14.x, 16.x, 18.x]
+        node-version: [18.x]
 
     steps:
     - uses: actions/checkout@v3
@@ -33,6 +33,10 @@ jobs:
     - name: Install Trunk 
       run: |
         cargo install --locked trunk
+    
+    - name: Install WASM Pack 
+      run: |
+        cargo install wasm-pack
     
     - name: Install cargo-make
       uses: actions-rs/cargo@v1

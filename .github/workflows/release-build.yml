@@ -34,6 +34,10 @@ jobs:
       run: |
         cargo install --locked trunk
     
+    - name: Install Cargo Generate
+      run: |
+        cargo install cargo-generate
+    
     - name: Install WASM Pack 
       run: |
         cargo install wasm-pack

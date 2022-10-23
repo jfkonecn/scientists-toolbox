@@ -26,21 +26,26 @@ jobs:
     - name: NPM Install
       run: |
         npm install
-    
-    - name: Install WASM Pack 
+      
+    - name: Add target
       run: |
-        cargo install wasm-pack
-        rustup target add wasm32-unknown-unknown
+        rustup target add wasm32-unknown-unknown    
         
-    - name: Install Trunk 
-      run: |
-        cargo install --locked trunk
-    
-    - name: Install cargo-make
-      uses: actions-rs/cargo@v1
+    - name: Install wasm-pack 
+      uses: baptiste0928/cargo-install@v1.3.0
       with:
-        command: install
-        args: --debug cargo-make
+        crate: wasm-pack
+        
+    - name: Install trunk
+      uses: baptiste0928/cargo-install@v1.3.0
+      with:
+        crate: trunk
+        
+    - name: Install cargo-make
+      uses: baptiste0928/cargo-install@v1.3.0
+      with:
+        crate: cargo-make
+        args: --debug
         
     - name: Run CI
       uses: actions-rs/cargo@v1

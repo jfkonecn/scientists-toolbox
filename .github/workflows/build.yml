@@ -61,4 +61,9 @@ jobs:
         name: build
         path: dist
 
+    - name: Upload Pages Artifact
+      uses: actions/upload-pages-artifact@v1
+      with:
+        path: dist
+
 

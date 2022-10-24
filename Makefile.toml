@@ -29,7 +29,7 @@ workspace = false
 
 [tasks.app-build-release]
 command = "trunk"
-args = ["build", "--release"]
+args = ["build", "--release", "--public-url", "scientists-toolbox"]
 workspace = false
 
 [tasks.tailwind-dev]

@@ -54,12 +54,10 @@ jobs:
         args: release
       env: { CARGO_MAKE_RUN_CODECOV: true }
     
-    - uses: actions/checkout@master
-    - name: copy file
-      uses: canastro/copy-file-action@master
-      with:
-        source: "dist/index.html"
-        target: "dist/404.html"
+    - name: Copy file
+      run: |
+        cp ./dist/index.html ./dist/404.html
+    
     
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v3.1.1

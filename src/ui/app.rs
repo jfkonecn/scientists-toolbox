@@ -83,7 +83,7 @@ fn app_shell(AppShellProps { children }: &AppShellProps) -> Html {
     html! {
         <div class={classes!("flex", "items-center", "justify-center")}>
             <div class={classes!("w-full", "xl:w-[theme(screens.xl)]")}>
-                <header class={classes!("bg-sky-100","flex", "items-center", "justify-center", "h-20", "p-14")}>
+                <header class={classes!("bg-sky-100","flex", "items-center", "justify-center", "h-28", "p-4")}>
                     <ul class={classes!("flex", "items-center", "h-full")}>
                         <li class="w-20">
                             <Link<MainRoute> classes={classes!("hover:underline")} to={MainRoute::Home}>
@@ -113,7 +113,7 @@ fn app_shell(AppShellProps { children }: &AppShellProps) -> Html {
                         </li>
                     </ul>
                 </header>
-                <main class={classes!("bg-white", "min-h-[calc(100vh-theme(spacing.20)-theme(spacing.20))]")}>
+                <main class={classes!("bg-white", "min-h-[calc(100vh-theme(spacing.28)-theme(spacing.20))]")}>
                     {for children.iter()}
                 </main>
                 <footer class={classes!("bg-sky-100", "h-20")}>

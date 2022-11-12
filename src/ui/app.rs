@@ -81,9 +81,11 @@ fn app_shell(AppShellProps { children }: &AppShellProps) -> Html {
             true
         };
     html! {
-        <div class={classes!("flex", "items-center", "justify-center")}>
-            <div class={classes!("w-full", "xl:w-[theme(screens.xl)]")}>
-                <header class={classes!("bg-sky-100","flex", "items-center", "justify-center", "h-28", "p-4")}>
+        <div class={classes!("flex", "items-center", "justify-center", "flex-col", "w-full", "bg-gray-100")}>
+            <header class={classes!("bg-sky-100","h-28", "p-4", "w-full",
+                    "grid", "justify-center")}>
+                <nav class={classes!("max-w-5xl", "w-screen",
+                "flex", "items-center", "justify-center", )}>
                     <ul class={classes!("flex", "items-center", "h-full")}>
                         <li class="w-20">
                             <Link<MainRoute> classes={classes!("hover:underline")} to={MainRoute::Home}>
@@ -112,13 +114,18 @@ fn app_shell(AppShellProps { children }: &AppShellProps) -> Html {
                             </a>
                         </li>
                     </ul>
-                </header>
-                <main class={classes!("bg-white", "min-h-[calc(100vh-theme(spacing.28)-theme(spacing.20))]")}>
-                    {for children.iter()}
-                </main>
-                <footer class={classes!("bg-sky-100", "h-20")}>
-                </footer>
+                </nav>
+            </header>
+            <main class={classes!("bg-white",
+            "min-h-[calc(100vh-theme(spacing.28)-theme(spacing.20))]",
+            "w-full","flex", "items-start", "justify-center",
+           )}>
+            <div class={classes!("max-w-5xl", "w-screen")}>
+                {for children.iter()}
             </div>
+            </main>
+            <footer class={classes!("bg-sky-100", "h-20", "w-full")}>
+            </footer>
         </div>
     }
 }

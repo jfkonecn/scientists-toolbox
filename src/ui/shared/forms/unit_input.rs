@@ -92,8 +92,7 @@ pub fn unit_input<T: Unit + PartialEq + TryFrom<RawUnit> + Into<RawUnit> + 'stat
             <input
                 type={"number"}
                 min="0"
-                inputmode="numeric"
-                pattern="[0-9]*"
+                inputmode="decimal"
                 id={id.clone()}
                 placeholder={"enter a number"}
                 oninput={on_value_input}

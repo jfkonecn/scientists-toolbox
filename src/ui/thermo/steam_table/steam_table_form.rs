@@ -1,5 +1,8 @@
 use std::fmt::Display;
 
+use super::super::super::shared::forms::calculation_button_section::*;
+use super::super::super::shared::forms::calculation_form::*;
+use super::super::super::shared::forms::calculation_section::*;
 use super::super::super::shared::forms::select_input::*;
 use super::super::super::shared::forms::str_output::*;
 use super::super::super::shared::forms::unit_input::*;
@@ -17,7 +20,7 @@ fn entry_to_html(entry_opt: &Option<Result<PtvEntry, SteamQueryErr>>) -> Html {
     match entry_opt {
         Some(Ok(entry)) => {
             html! {
-                <fieldset class={classes!("grid", "grid-cols-1", "md:grid-cols-2", "lg:grid-cols-3")}>
+            <CalculationSection>
                     <UnitOutput<Pressure>
                         id={"pressure_output"}
                         label={"Pressure"}
@@ -69,7 +72,7 @@ fn entry_to_html(entry_opt: &Option<Result<PtvEntry, SteamQueryErr>>) -> Html {
                         label={"Specific Volume"}
                         value={entry.specific_volume}
                     />
-                </fieldset>
+            </CalculationSection>
             }
         }
         Some(Err(err)) => {
@@ -115,14 +118,14 @@ fn entry_to_html(entry_opt: &Option<Result<PtvEntry, SteamQueryErr>>) -> Html {
                 }
             };
             html! {
-                <fieldset class={classes!("grid", "grid-cols-1", "md:grid-cols-2", "lg:grid-cols-3")}>
-                    <StrOutput
-                        id={"temperature_output"}
-                        label={label}
-                        value={err_msg}
-                        output_type={OutputType::Error}
-                    />
-                </fieldset>
+            <CalculationSection>
+                <StrOutput
+                    id={"error_output"}
+                    label={label}
+                    value={err_msg}
+                    output_type={OutputType::Error}
+                />
+            </CalculationSection>
             }
         }
         None => html! {},
@@ -427,44 +430,21 @@ pub fn steam_table_form(SteamTableFormProps {}: &SteamTableFormProps) -> Html {
     };
     let entry_opt = use_state(|| -> Option<Result<PtvEntry, SteamQueryErr>> { None });
 
-    let output: Html = entry_to_html(&*entry_opt);
+    let output = entry_to_html(&*entry_opt);
 
     html! {
-        <form class={classes!(
-                "w-full",
-                "h-full",
-                "grid",
-                "place-items-center",
-                "[&>*]:w-full",
-                "[&>*]:p-8",
-                "[&>*]:grid",
-                "[&>*]:place-items-center",
-            )}>
-            <fieldset class={classes!("grid", "grid-cols-1", "md:grid-cols-2", "lg:grid-cols-3")}>
+        <CalculationForm>
+            <CalculationSection>
                 <SteamTableInput onchange={on_steam_query_change}/>
-            </fieldset>
-            <fieldset>
-                <input
-                    value={"Calculate"}
-                    type="submit"
-                    class={classes!(
-                        "hover:cursor-pointer",
-                        "border-2",
-                        "rounded-md",
-                        "border-gray-200",
-                        "p-2",
-                        "w-64"
-                    )}
-                    onclick={move |e: MouseEvent| {
-                        e.prevent_default();
+            </CalculationSection>
+            <CalculationButtonSection on_click={Callback::from(move |_: Event| {
                         if let Some(query) = *steam_query_opt {
                             let result = get_steam_table_entry(query);
                             entry_opt.set(Some(result));
                         }
 
-                    }}/>
-            </fieldset>
+                    })}/>
             {output}
-        </form>
+        </CalculationForm>
     }
 }

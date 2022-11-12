@@ -1,3 +1,4 @@
+use super::assets::svg::*;
 use super::logo::*;
 use super::shared::search_button::*;
 use super::splash::Splash;
@@ -82,7 +83,7 @@ fn app_shell(AppShellProps { children }: &AppShellProps) -> Html {
     html! {
         <div class={classes!("flex", "items-center", "justify-center")}>
             <div class={classes!("w-full", "xl:w-[theme(screens.xl)]")}>
-                <header class={classes!("bg-sky-100","flex", "items-center", "justify-center", "h-20", "p-10")}>
+                <header class={classes!("bg-sky-100","flex", "items-center", "justify-center", "h-20", "p-14")}>
                     <ul class={classes!("flex", "items-center", "h-full")}>
                         <li class="w-20">
                             <Link<MainRoute> classes={classes!("hover:underline")} to={MainRoute::Home}>
@@ -95,7 +96,7 @@ fn app_shell(AppShellProps { children }: &AppShellProps) -> Html {
                         {
                             if show_search_on_nav_bar {
                                 html! {
-                                    <li class={classes!("w-5", "h-5")}>
+                                    <li class={classes!("w-10", "h-10")}>
                                         <SearchButton/>
                                     </li>
                                 }
@@ -105,8 +106,10 @@ fn app_shell(AppShellProps { children }: &AppShellProps) -> Html {
                                 }
                             }
                         }
-                        <li>
-                            <a class={classes!("hover:underline")} target="_blank" href="https://github.com/jfkonecn/scientists-toolbox">{"Github"}</a>
+                        <li class={classes!("w-10", "h-10")}>
+                            <a  target="_blank" href="https://github.com/jfkonecn/scientists-toolbox">
+                                <Github class={classes!("bg-sky-100", "w-full", "h-full")}/>
+                            </a>
                         </li>
                     </ul>
                 </header>

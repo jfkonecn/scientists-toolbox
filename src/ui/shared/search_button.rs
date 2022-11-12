@@ -7,9 +7,10 @@ use yew_router::prelude::*;
 pub fn search_button() -> Html {
     html! {
     <Link<MainRoute>
-        classes={classes!("w-full", "h-full")}
         to={MainRoute::Home}>
-        <MagnifyingGlass/>
+        <MagnifyingGlass
+        class={classes!("w-full", "h-full")}
+        />
     </Link<MainRoute>>
     }
 }

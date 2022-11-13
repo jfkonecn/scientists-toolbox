@@ -21,3 +21,9 @@ pub struct OrificePlateFlow {
     discharge_coefficient: f64,
     flow_rate: VolumetricFlowRate,
 }
+
+#[derive(Debug, PartialEq)]
+pub enum OrificePlateQueryErr {
+    DischargeCoefficientLow,
+    DischargeCoefficientHigh,
+}

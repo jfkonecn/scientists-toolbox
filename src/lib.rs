@@ -1,5 +1,6 @@
 use wasm_bindgen::prelude::*;
 
+mod fluids;
 mod numerical_methods;
 mod thermo;
 mod ui;

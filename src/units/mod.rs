@@ -249,6 +249,78 @@ units! {
             |x| x * (3.28084 * 12f64),
         }
     }
+    Area {
+        M2 {
+            "m²",
+            "meters squared",
+        },
+        Km2 {
+            "km²",
+            "kilometers squared",
+            |x| x * (1000f64 * 1000f64),
+            |x| x / (1000f64 * 1000f64),
+        },
+        Ft2 {
+            "ft²",
+            "feet squared",
+            |x| x / (3.28084 * 3.28084),
+            |x| x * (3.28084 * 3.28084),
+        },
+        Inches2 {
+            "in²",
+            "inches squared",
+            |x| x / (3.28084 * 12f64 * 3.28084 * 12f64),
+            |x| x * (3.28084 * 12f64 * 3.28084 * 12f64),
+        }
+    }
+    Volume {
+        M3 {
+            "m³",
+            "meters cubed",
+        },
+        Km3 {
+            "km³",
+            "kilometers cubed",
+            |x| x * (1000f64 * 1000f64 * 1000f64),
+            |x| x / (1000f64 * 1000f64 * 1000f64),
+        },
+        Ft3 {
+            "ft³",
+            "feet cubed",
+            |x| x / (3.28084 * 3.28084 * 3.28084),
+            |x| x * (3.28084 * 3.28084 * 3.28084),
+        },
+        Inches3 {
+            "in³",
+            "inches cubed",
+            |x| x / (3.28084 * 12f64 * 3.28084 * 12f64 * 3.28084 * 12f64),
+            |x| x * (3.28084 * 12f64 * 3.28084 * 12f64 * 3.28084 * 12f64),
+        }
+    }
+    VolumetricFlowRate {
+        M3PerSec {
+            "m³/sec",
+            "meters cubed per second",
+        },
+        M3PerMin {
+            "m³/min",
+            "meters cubed per minute",
+            |x| x * (60f64),
+            |x| x / (60f64),
+        },
+        Ft3PerSec {
+            "ft³/sec",
+            "feet cubed per second",
+            |x| x / (3.28084 * 3.28084 * 3.28084),
+            |x| x * (3.28084 * 3.28084 * 3.28084),
+        },
+        Ft3PerMin {
+            "ft³/min",
+            "feet cubed per minute",
+            |x| x * (60f64 / (3.28084 * 3.28084 * 3.28084)),
+            |x| x * ((3.28084 * 3.28084 * 3.28084) / 60f64),
+        }
+    }
     Mass {
         Kg {
             "kg",
@@ -357,6 +429,18 @@ units! {
             |x| x / (2.20462 / 35.3147),
         }
     }
+    Density {
+        KgPerM3 {
+            "kg/m³",
+            "cubic meters per kilogram",
+        },
+        LbsmPerFt3 {
+            "Lbsₘ/ft³",
+            "pounds mass per cubic feet",
+            |x| x * (35.3147 / 2.20462),
+            |x| x / (35.3147 / 2.20462),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -371,6 +455,54 @@ mod tests {
         assert_approx_eq!(
             Length::Inches(Inches::new(1f64)),
             Length::M(M::new(1f64 / (3.28084 * 12f64)))
+        );
+    }
+
+    #[test]
+    fn area_conversion() {
+        assert_approx_eq!(Area::M2(M2::new(1f64)).into_si_unit(), M2::new(1f64));
+        assert_approx_eq!(
+            Area::Ft2(Ft2::new(1f64)),
+            Area::M2(M2::new(1f64 / (3.28084 * 3.28084)))
+        );
+        assert_approx_eq!(
+            Area::Inches2(Inches2::new(1f64)),
+            Area::M2(M2::new(1f64 / (3.28084 * 12f64 * 3.28084 * 12f64)))
+        );
+    }
+
+    #[test]
+    fn volume_conversion() {
+        assert_approx_eq!(Volume::M3(M3::new(1f64)).into_si_unit(), M3::new(1f64));
+        assert_approx_eq!(
+            Volume::Ft3(Ft3::new(1f64)),
+            Volume::M3(M3::new(1f64 / (3.28084 * 3.28084 * 3.28084)))
+        );
+        assert_approx_eq!(
+            Volume::Inches3(Inches3::new(1f64)),
+            Volume::M3(M3::new(
+                1f64 / (3.28084 * 12f64 * 3.28084 * 12f64 * 3.28084 * 12f64)
+            ))
+        );
+    }
+
+    #[test]
+    fn volumetric_flow_rate_conversion() {
+        assert_approx_eq!(
+            VolumetricFlowRate::M3PerSec(M3PerSec::new(1f64)).into_si_unit(),
+            M3PerSec::new(1f64)
+        );
+        assert_approx_eq!(
+            VolumetricFlowRate::M3PerSec(M3PerSec::new(1f64 * 60f64)),
+            VolumetricFlowRate::M3PerMin(M3PerMin::new(1f64))
+        );
+        assert_approx_eq!(
+            VolumetricFlowRate::Ft3PerSec(Ft3PerSec::new(1f64)),
+            VolumetricFlowRate::M3PerSec(M3PerSec::new(1f64 / (3.28084 * 3.28084 * 3.28084)))
+        );
+        assert_approx_eq!(
+            VolumetricFlowRate::Ft3PerMin(Ft3PerMin::new(1f64)),
+            VolumetricFlowRate::M3PerSec(M3PerSec::new(60f64 / (3.28084 * 3.28084 * 3.28084)))
         );
     }
 
@@ -460,6 +592,18 @@ mod tests {
         assert_approx_eq!(
             SpecificVolume::Ft3PerLbsm(Ft3PerLbsm::new(1f64)),
             SpecificVolume::M3PerKg(M3PerKg::new(2.20462 / 35.3147))
+        );
+    }
+
+    #[test]
+    fn density_conversion() {
+        assert_approx_eq!(
+            Density::KgPerM3(KgPerM3::new(1f64)).into_si_unit(),
+            KgPerM3::new(1f64)
+        );
+        assert_approx_eq!(
+            Density::LbsmPerFt3(LbsmPerFt3::new(1f64)),
+            Density::KgPerM3(KgPerM3::new(35.3147 / 2.20462))
         );
     }
 }

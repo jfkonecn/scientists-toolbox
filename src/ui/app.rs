@@ -110,9 +110,9 @@ fn app_shell(AppShellProps { children }: &AppShellProps) -> Html {
         };
     html! {
         <div class={classes!("flex", "items-center", "justify-center", "flex-col", "w-full", "bg-gray-100")}>
-            <header class={classes!("bg-sky-100","h-28", "p-4", "w-full",
+            <header class={classes!("bg-sky-100","h-32", "w-full",
                     "grid", "justify-center")}>
-                <nav class={classes!("max-w-5xl", "w-screen",
+                <nav class={classes!("max-w-5xl", "w-screen", "px-10",
                 "flex", "items-center", "justify-center", )}>
                     <ul class={classes!("flex", "items-center", "h-full")}>
                         <li class="w-20">

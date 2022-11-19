@@ -16,11 +16,17 @@ use crate::units::EnergyPerMass;
 use crate::units::*;
 use yew::prelude::*;
 
-fn entry_to_html(entry_opt: &Option<Result<PtvEntry, SteamQueryErr>>) -> Html {
+#[derive(Properties, PartialEq)]
+pub struct PtvEntryOutputProps {
+    entry_opt: Option<Result<PtvEntry, SteamQueryErr>>,
+}
+
+#[function_component(PtvEntryOutput)]
+fn ptv_entry_output(PtvEntryOutputProps { entry_opt }: &PtvEntryOutputProps) -> Html {
     match entry_opt {
         Some(Ok(entry)) => {
             html! {
-            <CalculationSection>
+                <>
                     <UnitOutput<Pressure>
                         id={"pressure_output"}
                         label={"Pressure"}
@@ -72,7 +78,7 @@ fn entry_to_html(entry_opt: &Option<Result<PtvEntry, SteamQueryErr>>) -> Html {
                         label={"Specific Volume"}
                         value={entry.specific_volume}
                     />
-            </CalculationSection>
+                </>
             }
         }
         Some(Err(err)) => {
@@ -118,14 +124,12 @@ fn entry_to_html(entry_opt: &Option<Result<PtvEntry, SteamQueryErr>>) -> Html {
                 }
             };
             html! {
-            <CalculationSection>
                 <StrOutput
                     id={"error_output"}
                     label={label}
                     value={err_msg}
                     output_type={OutputType::Error}
                 />
-            </CalculationSection>
             }
         }
         None => html! {},
@@ -430,7 +434,7 @@ pub fn steam_table_form(SteamTableFormProps {}: &SteamTableFormProps) -> Html {
     };
     let entry_opt = use_state(|| -> Option<Result<PtvEntry, SteamQueryErr>> { None });
 
-    let output = entry_to_html(&*entry_opt);
+    let entry_opt_output = (*entry_opt).clone();
 
     html! {
         <CalculationForm>
@@ -444,7 +448,9 @@ pub fn steam_table_form(SteamTableFormProps {}: &SteamTableFormProps) -> Html {
                         }
 
                     })}/>
-            {output}
+            <CalculationSection>
+                <PtvEntryOutput entry_opt={entry_opt_output}/>
+            </CalculationSection>
         </CalculationForm>
     }
 }

@@ -1,4 +1,5 @@
 use super::assets::svg::*;
+use super::fluids::orifice_plate_form::OrificePlateForm;
 use super::logo::*;
 use super::shared::search_button::*;
 use super::splash::Splash;
@@ -15,6 +16,10 @@ pub enum MainRoute {
     ThermoRoot,
     #[at("/Thermo/*")]
     Thermo,
+    #[at("/Fluids")]
+    FluidsRoot,
+    #[at("/Fluids/*")]
+    Fluids,
     #[not_found]
     #[at("/*")]
     NotFound,
@@ -24,6 +29,15 @@ pub enum MainRoute {
 pub enum ThermoRoute {
     #[at("/Thermo/SteamTable")]
     SteamTable,
+    #[not_found]
+    #[at("/*")]
+    NotFound,
+}
+
+#[derive(Clone, Copy, Routable, PartialEq, Debug, EnumIter)]
+pub enum FluidsRoute {
+    #[at("/Fluids/OrificePlate")]
+    OrificePlate,
     #[not_found]
     #[at("/*")]
     NotFound,
@@ -46,6 +60,17 @@ fn switch_thermo(route: &ThermoRoute) -> Html {
     }
 }
 
+fn switch_fluids(route: &FluidsRoute) -> Html {
+    match route {
+        FluidsRoute::OrificePlate => html! {
+            <OrificePlateForm />
+        },
+        FluidsRoute::NotFound => html! {
+            <NotFound/>
+        },
+    }
+}
+
 fn switch_main(route: &MainRoute) -> Html {
     html! {
         <AppShell>
@@ -56,6 +81,9 @@ fn switch_main(route: &MainRoute) -> Html {
                 },
                 MainRoute::ThermoRoot | MainRoute::Thermo => html! {
                     <Switch<ThermoRoute> render={Switch::render(switch_thermo)} />
+                },
+                MainRoute::FluidsRoot | MainRoute::Fluids => html! {
+                    <Switch<FluidsRoute> render={Switch::render(switch_fluids)} />
                 },
                 MainRoute::NotFound => html! {
                     <NotFound/>

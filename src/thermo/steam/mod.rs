@@ -83,14 +83,14 @@ pub enum SteamQuery {
     },
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum SteamQueryErr {
     OutOfRange(OutOfRange),
     CompositePhaseRegionErr(CompositePhaseRegionErr),
     FailedToConverge(RootFinderErr),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum OutOfRange {
     TemperatureLow,
     TemperatureHigh,

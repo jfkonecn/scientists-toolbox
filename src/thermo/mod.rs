@@ -4,7 +4,7 @@ use crate::units::*;
 
 pub mod steam;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum PhaseRegion {
     SupercriticalFluid,
     // Temperature and pressure is above the critical point
@@ -50,7 +50,7 @@ impl fmt::Display for PhaseRegion {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 #[allow(dead_code)]
 pub enum NonCriticalPhaseRegion {
     // Pressure is less than both the sublimation and vaporization curve and is below the critical temperature
@@ -61,7 +61,7 @@ pub enum NonCriticalPhaseRegion {
     Solid,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 #[allow(dead_code)]
 pub enum CompositePhaseRegion {
     SolidLiquid(SolidLiquid),
@@ -70,14 +70,14 @@ pub enum CompositePhaseRegion {
     SolidLiquidVapor(SolidLiquidVapor),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 #[allow(dead_code)]
 pub enum CompositePhaseRegionErr {
     FractionsDoNotAddUpToOne,
     FractionsMustBePositive,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SolidLiquid {
     solid_frac: f64,
     liquid_frac: f64,
@@ -105,7 +105,7 @@ impl SolidLiquid {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct LiquidVapor {
     liquid_frac: f64,
     vapor_frac: f64,
@@ -132,7 +132,7 @@ impl LiquidVapor {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SolidVapor {
     solid_frac: f64,
     vapor_frac: f64,
@@ -160,7 +160,7 @@ impl SolidVapor {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SolidLiquidVapor {
     solid_frac: f64,
     liquid_frac: f64,
@@ -198,7 +198,7 @@ impl SolidLiquidVapor {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct PtvEntry {
     // in K
     pub temperature: Temperature,

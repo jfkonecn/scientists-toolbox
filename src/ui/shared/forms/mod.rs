@@ -2,6 +2,8 @@ mod boxed_label;
 pub mod calculation_button_section;
 pub mod calculation_form;
 pub mod calculation_section;
+pub mod number_input;
+pub mod number_output;
 pub mod select_input;
 pub mod str_output;
 pub mod unit_input;

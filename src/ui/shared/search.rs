@@ -1,4 +1,4 @@
-use crate::ui::app::{MainRoute, ThermoRoute};
+use crate::ui::app::{FluidsRoute, ThermoRoute};
 use crate::ui::assets::svg::*;
 use strum::IntoEnumIterator;
 use wasm_bindgen::JsCast;
@@ -8,8 +8,8 @@ use yew_router::prelude::*;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum AllRoutes {
-    MainRoute(MainRoute),
     ThermoRoute(ThermoRoute),
+    FluidsRoute(FluidsRoute),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -27,36 +27,6 @@ struct SearchableLinkConfig {
 }
 
 fn create_link_configs() -> Vec<SearchableGroup> {
-    let main_routes = SearchableGroup {
-        tags: vec![],
-        label: "Main".to_owned(),
-        configs: MainRoute::iter()
-            .map(|route| {
-                let opt: Option<(String, Vec<String>)> = match route {
-                    // MainRoute::Home => Some(("Home".to_owned(), vec!["test".to_owned()])),
-                    // MainRoute::NotFound => Some((
-                    //     "Not Found".to_owned(),
-                    //     vec!["something".to_owned(), "test".to_owned()],
-                    // )),
-                    // MainRoute::Thermo | MainRoute::ThermoRoot => None,
-                    MainRoute::Home
-                    | MainRoute::NotFound
-                    | MainRoute::Thermo
-                    | MainRoute::ThermoRoot => None,
-                };
-                if let Some((label, tags)) = opt {
-                    Some(SearchableLinkConfig {
-                        tags,
-                        label,
-                        route: AllRoutes::MainRoute(route),
-                    })
-                } else {
-                    None
-                }
-            })
-            .flatten()
-            .collect::<Vec<SearchableLinkConfig>>(),
-    };
     let thermo_routes = SearchableGroup {
         tags: vec![],
         label: "Thermodynamics".to_owned(),
@@ -79,7 +49,30 @@ fn create_link_configs() -> Vec<SearchableGroup> {
             .flatten()
             .collect::<Vec<SearchableLinkConfig>>(),
     };
-    vec![main_routes, thermo_routes]
+
+    let fluids_routes = SearchableGroup {
+        tags: vec![],
+        label: "Fluids".to_owned(),
+        configs: FluidsRoute::iter()
+            .map(|route| {
+                let opt = match route {
+                    FluidsRoute::OrificePlate => Some(("Orifice Plate".to_owned(), vec![])),
+                    FluidsRoute::NotFound => None,
+                };
+                if let Some((label, tags)) = opt {
+                    Some(SearchableLinkConfig {
+                        tags,
+                        label,
+                        route: AllRoutes::FluidsRoute(route),
+                    })
+                } else {
+                    None
+                }
+            })
+            .flatten()
+            .collect::<Vec<SearchableLinkConfig>>(),
+    };
+    vec![fluids_routes, thermo_routes]
         .iter()
         .filter(|x| x.configs.len() > 0)
         .map(|x| (*x).clone())
@@ -131,18 +124,18 @@ fn search_result(SearchResultProps { group }: &SearchResultProps) -> html {
             {
                 for group.configs.iter().map(|config| {
                     let link = match config.route {
-                        AllRoutes::MainRoute(route) => {
+                        AllRoutes::ThermoRoute(route) => {
                             html! {
-                            <SearchResultLink<MainRoute>
+                            <SearchResultLink<ThermoRoute>
                                 to={route}
                                 label={config.label.to_owned()}
                                 />
 
                             }
                         }
-                        AllRoutes::ThermoRoute(route) => {
+                        AllRoutes::FluidsRoute(route) => {
                             html! {
-                            <SearchResultLink<ThermoRoute>
+                            <SearchResultLink<FluidsRoute>
                                 to={route}
                                 label={config.label.to_owned()}
                                 />

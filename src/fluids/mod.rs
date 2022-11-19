@@ -14,15 +14,15 @@ pub enum OrificePlateQuery {
 
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub struct OrificePlateFlow {
-    pipe_area: Area,
-    orifice_area: Area,
-    density: Density,
-    pressure_drop: Pressure,
-    discharge_coefficient: f64,
-    flow_rate: VolumetricFlowRate,
+    pub pipe_area: Area,
+    pub orifice_area: Area,
+    pub density: Density,
+    pub pressure_drop: Pressure,
+    pub discharge_coefficient: f64,
+    pub flow_rate: VolumetricFlowRate,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum OrificePlateQueryErr {
     DischargeCoefficientLow,
     DischargeCoefficientHigh,

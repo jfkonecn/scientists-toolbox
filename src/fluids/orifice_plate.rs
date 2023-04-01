@@ -17,10 +17,10 @@ pub fn query_orifice_plate(
             } else if discharge_coefficient < 0.0 {
                 Err(OrificePlateQueryErr::DischargeCoefficientLow)
             } else {
-                let pipe_area_value = pipe_area.into_si_unit().value;
-                let orifice_area_value = orifice_area.into_si_unit().value;
-                let pressure_drop_value = pressure_drop.into_si_unit().value;
-                let density_value = density.into_si_unit().value;
+                let pipe_area_value = pipe_area.convert_to_si_unit().value;
+                let orifice_area_value = orifice_area.convert_to_si_unit().value;
+                let pressure_drop_value = pressure_drop.convert_to_si_unit().value;
+                let density_value = density.convert_to_si_unit().value;
                 let flow_rate_value = discharge_coefficient
                     * pipe_area_value
                     * f64::sqrt(

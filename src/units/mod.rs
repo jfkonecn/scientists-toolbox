@@ -18,7 +18,7 @@ pub struct UnitLabel {
 
 pub trait Unit: fmt::Debug + TryFrom<RawUnit> + Into<RawUnit> {
     type Si;
-    fn into_si_unit(&self) -> Self::Si;
+    fn convert_to_si_unit(&self) -> Self::Si;
     fn list_unit_labels() -> Vec<UnitLabel>;
     fn get_si_unit_label() -> UnitLabel;
     fn get_value(&self) -> f64;
@@ -107,7 +107,7 @@ macro_rules! units {
         #[allow(dead_code)]
         impl $type_name {
             pub fn abs(self) -> f64 {
-                self.into_si_unit().value.abs()
+                self.convert_to_si_unit().value.abs()
             }
         }
 
@@ -115,7 +115,7 @@ macro_rules! units {
             type Output = Self;
 
             fn sub(self, other: Self) -> Self::Output {
-                let diff = self.into_si_unit() - other.into_si_unit();
+                let diff = self.convert_to_si_unit() - other.convert_to_si_unit();
                 $type_name::$si_unit_name(diff)
             }
         }
@@ -139,9 +139,9 @@ macro_rules! units {
             }
         }
 
-        impl Into<RawUnit> for $type_name {
-            fn into(self) -> RawUnit {
-                match self {
+        impl From<$type_name> for RawUnit {
+            fn from(val: $type_name) -> Self {
+                match val {
                     $type_name::$si_unit_name($si_unit_name {value}) => RawUnit {
                         value,
                         unit_display: $si_abbreviation.to_owned(),
@@ -158,7 +158,7 @@ macro_rules! units {
 
         impl Unit for $type_name {
             type Si = $si_unit_name;
-            fn into_si_unit(&self) -> $si_unit_name {
+            fn convert_to_si_unit(&self) -> $si_unit_name {
                 match self {
                     $type_name::$si_unit_name(x) => (*x).clone(),
                     $(
@@ -204,7 +204,7 @@ macro_rules! units {
             }
 
             fn try_convert(&self, unit_display: String) -> Result<Self, ParseUnitError> {
-                let si_unit = self.into_si_unit();
+                let si_unit = self.convert_to_si_unit();
                 let value = si_unit.value;
 
                 match unit_display.as_str() {
@@ -450,7 +450,7 @@ mod tests {
 
     #[test]
     fn length_conversion() {
-        assert_approx_eq!(Length::M(M::new(1f64)).into_si_unit(), M::new(1f64));
+        assert_approx_eq!(Length::M(M::new(1f64)).convert_to_si_unit(), M::new(1f64));
         assert_approx_eq!(Length::Ft(Ft::new(1f64)), Length::M(M::new(1f64 / 3.28084)));
         assert_approx_eq!(
             Length::Inches(Inches::new(1f64)),
@@ -460,7 +460,7 @@ mod tests {
 
     #[test]
     fn area_conversion() {
-        assert_approx_eq!(Area::M2(M2::new(1f64)).into_si_unit(), M2::new(1f64));
+        assert_approx_eq!(Area::M2(M2::new(1f64)).convert_to_si_unit(), M2::new(1f64));
         assert_approx_eq!(
             Area::Ft2(Ft2::new(1f64)),
             Area::M2(M2::new(1f64 / (3.28084 * 3.28084)))
@@ -473,7 +473,10 @@ mod tests {
 
     #[test]
     fn volume_conversion() {
-        assert_approx_eq!(Volume::M3(M3::new(1f64)).into_si_unit(), M3::new(1f64));
+        assert_approx_eq!(
+            Volume::M3(M3::new(1f64)).convert_to_si_unit(),
+            M3::new(1f64)
+        );
         assert_approx_eq!(
             Volume::Ft3(Ft3::new(1f64)),
             Volume::M3(M3::new(1f64 / (3.28084 * 3.28084 * 3.28084)))
@@ -489,7 +492,7 @@ mod tests {
     #[test]
     fn volumetric_flow_rate_conversion() {
         assert_approx_eq!(
-            VolumetricFlowRate::M3PerSec(M3PerSec::new(1f64)).into_si_unit(),
+            VolumetricFlowRate::M3PerSec(M3PerSec::new(1f64)).convert_to_si_unit(),
             M3PerSec::new(1f64)
         );
         assert_approx_eq!(
@@ -508,17 +511,20 @@ mod tests {
 
     #[test]
     fn mass_conversion() {
-        assert_approx_eq!(Mass::Kg(Kg::new(1f64)).into_si_unit(), Kg::new(1f64));
-        assert_approx_eq!(Mass::G(G::new(1f64)).into_si_unit(), Kg::new(1000f64));
+        assert_approx_eq!(Mass::Kg(Kg::new(1f64)).convert_to_si_unit(), Kg::new(1f64));
+        assert_approx_eq!(Mass::G(G::new(1f64)).convert_to_si_unit(), Kg::new(1000f64));
         assert_approx_eq!(
-            Mass::Lbsm(Lbsm::new(1f64)).into_si_unit(),
+            Mass::Lbsm(Lbsm::new(1f64)).convert_to_si_unit(),
             Kg::new(2.20462f64)
         );
     }
 
     #[test]
     fn temperature_conversion() {
-        assert_approx_eq!(Temperature::K(K::new(1f64)).into_si_unit(), K::new(1f64));
+        assert_approx_eq!(
+            Temperature::K(K::new(1f64)).convert_to_si_unit(),
+            K::new(1f64)
+        );
         assert_approx_eq!(Temperature::C(C::new(1f64)), Temperature::K(K::new(274.15)));
         assert_approx_eq!(
             Temperature::F(F::new(1f64)),
@@ -532,9 +538,12 @@ mod tests {
 
     #[test]
     fn pressure_conversion() {
-        assert_approx_eq!(Pressure::Pa(Pa::new(1f64)).into_si_unit(), Pa::new(1f64));
         assert_approx_eq!(
-            Pressure::KPa(KPa::new(1f64)).into_si_unit(),
+            Pressure::Pa(Pa::new(1f64)).convert_to_si_unit(),
+            Pa::new(1f64)
+        );
+        assert_approx_eq!(
+            Pressure::KPa(KPa::new(1f64)).convert_to_si_unit(),
             Pa::new(1000f64)
         );
         assert_approx_eq!(
@@ -550,7 +559,7 @@ mod tests {
     #[test]
     fn energy_per_mass_conversion() {
         assert_approx_eq!(
-            EnergyPerMass::JPerKg(JPerKg::new(1f64)).into_si_unit(),
+            EnergyPerMass::JPerKg(JPerKg::new(1f64)).convert_to_si_unit(),
             JPerKg::new(1f64)
         );
         assert_approx_eq!(
@@ -562,7 +571,7 @@ mod tests {
     #[test]
     fn energy_per_mass_temperature_conversion() {
         assert_approx_eq!(
-            EnergyPerMassTemperature::JPerKgK(JPerKgK::new(1f64)).into_si_unit(),
+            EnergyPerMassTemperature::JPerKgK(JPerKgK::new(1f64)).convert_to_si_unit(),
             JPerKgK::new(1f64)
         );
         assert_approx_eq!(
@@ -574,7 +583,7 @@ mod tests {
     #[test]
     fn velocity_conversion() {
         assert_approx_eq!(
-            Velocity::MPerSec(MPerSec::new(1f64)).into_si_unit(),
+            Velocity::MPerSec(MPerSec::new(1f64)).convert_to_si_unit(),
             MPerSec::new(1f64)
         );
         assert_approx_eq!(
@@ -586,7 +595,7 @@ mod tests {
     #[test]
     fn specific_volume_conversion() {
         assert_approx_eq!(
-            SpecificVolume::M3PerKg(M3PerKg::new(1f64)).into_si_unit(),
+            SpecificVolume::M3PerKg(M3PerKg::new(1f64)).convert_to_si_unit(),
             M3PerKg::new(1f64)
         );
         assert_approx_eq!(
@@ -598,7 +607,7 @@ mod tests {
     #[test]
     fn density_conversion() {
         assert_approx_eq!(
-            Density::KgPerM3(KgPerM3::new(1f64)).into_si_unit(),
+            Density::KgPerM3(KgPerM3::new(1f64)).convert_to_si_unit(),
             KgPerM3::new(1f64)
         );
         assert_approx_eq!(

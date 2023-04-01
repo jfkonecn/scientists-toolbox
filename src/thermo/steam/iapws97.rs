@@ -132,8 +132,8 @@ fn extract_temperature(query: &SteamQuery) -> Option<Temperature> {
 }
 
 fn check_if_out_of_range(query: &SteamQuery) -> Result<(), OutOfRange> {
-    let opt_p = extract_pressure(query).map(|x| x.into_si_unit().value);
-    let opt_t = extract_temperature(query).map(|x| x.into_si_unit().value);
+    let opt_p = extract_pressure(query).map(|x| x.convert_to_si_unit().value);
+    let opt_t = extract_temperature(query).map(|x| x.convert_to_si_unit().value);
     match (opt_p, opt_t) {
         (_, Some(t)) if t < 273.15 => Err(OutOfRange::TemperatureLow),
         (_, Some(t)) if t > 2000.0 + 273.15 => Err(OutOfRange::TemperatureHigh),
@@ -145,8 +145,8 @@ fn check_if_out_of_range(query: &SteamQuery) -> Result<(), OutOfRange> {
 }
 
 fn get_region_from_pt_point(pt_point: &PtPoint) -> Result<Iapws97Region, OutOfRange> {
-    let t = pt_point.temperature.into_si_unit();
-    let p = pt_point.pressure.into_si_unit().value;
+    let t = pt_point.temperature.convert_to_si_unit();
+    let p = pt_point.pressure.convert_to_si_unit().value;
     let opt_sat_p_result = get_sat_pressure(t).map(|x| x.value);
     let opt_boundary_result = get_boundary_34_pressure(t).map(|x| x.value);
     let t = t.value;
@@ -180,14 +180,14 @@ fn get_region_from_sat_query(sat_query: &SatQuery) -> Result<(PtPoint, Iapws97Re
         SatQuery::SatTQuery {
             temperature: t,
             phase_region: _,
-        } => get_sat_pressure((*t).into_si_unit()).map(|p| PtPoint {
+        } => get_sat_pressure((*t).convert_to_si_unit()).map(|p| PtPoint {
             pressure: Pressure::Pa(p),
             temperature: *t,
         }),
         SatQuery::SatPQuery {
             pressure: p,
             phase_region: _,
-        } => get_sat_temperature((*p).into_si_unit()).map(|t| PtPoint {
+        } => get_sat_temperature((*p).convert_to_si_unit()).map(|t| PtPoint {
             pressure: *p,
             temperature: Temperature::K(t),
         }),
@@ -199,8 +199,8 @@ fn create_entry_from_region_point(
     specific_region_point: SpecificRegionPoint,
     phase_region: PhaseRegion,
 ) -> PtvEntry {
-    let temperature = specific_region_point.point.temperature.into_si_unit().value;
-    let pressure = specific_region_point.point.pressure.into_si_unit().value;
+    let temperature = specific_region_point.point.temperature.convert_to_si_unit().value;
+    let pressure = specific_region_point.point.pressure.convert_to_si_unit().value;
     let pi = specific_region_point.pi;
     let tau = specific_region_point.tau;
     let gamma = specific_region_point.gamma;
@@ -241,8 +241,8 @@ fn create_entry_from_region_point(
 }
 
 fn gibbs_method(point: &PtPoint) -> PtvEntry {
-    let pressure = point.pressure.into_si_unit().value;
-    let temperature = point.temperature.into_si_unit().value;
+    let pressure = point.pressure.convert_to_si_unit().value;
+    let temperature = point.temperature.convert_to_si_unit().value;
     let pi = pressure / 16.53e6;
     let tau = 1386.0 / temperature;
     let mut gamma = 0f64;
@@ -289,8 +289,8 @@ fn vapor_method(
     ideal_points: &[JnRegionPoint],
     residual_points: &[IjnRegionPoint],
 ) -> PtvEntry {
-    let pressure = point.pressure.into_si_unit().value;
-    let temperature = point.temperature.into_si_unit().value;
+    let pressure = point.pressure.convert_to_si_unit().value;
+    let temperature = point.temperature.convert_to_si_unit().value;
     let pi = pressure / 1.0e6;
     let mut gamma = f64::ln(pi);
     let mut gamma_pi = 1.0 / pi;
@@ -346,7 +346,7 @@ fn region3_by_specific_volume(pt_point: &PtPoint, specific_volume: f64) -> PtvEn
     let density = 1f64 / specific_volume;
     let n1 = iapws97_constants::REGION_3_N1.n;
     let delta = density / 322f64;
-    let temperature = pt_point.temperature.into_si_unit().value;
+    let temperature = pt_point.temperature.convert_to_si_unit().value;
     let tau = 647.096 / temperature;
     let mut phi = n1 * f64::ln(delta);
     let mut phi_delta = n1 / delta;
@@ -402,7 +402,7 @@ fn region3_by_specific_volume(pt_point: &PtPoint, specific_volume: f64) -> PtvEn
 fn region3_method(point: &PtPoint) -> Result<PtvEntry, SteamQueryErr> {
     let f = |x| {
         let entry = region3_by_specific_volume(point, x);
-        entry.pressure.into_si_unit().value - point.pressure.into_si_unit().value
+        entry.pressure.convert_to_si_unit().value - point.pressure.convert_to_si_unit().value
     };
     secant_method(f, 1f64 / 500f64, 1e-4)
         .map(|x| region3_by_specific_volume(point, x))
@@ -413,7 +413,7 @@ fn get_entry_from_pt_point(
     point: &PtPoint,
     region: Iapws97Region,
 ) -> Result<PtvEntry, SteamQueryErr> {
-    let temperature = point.temperature.into_si_unit().value;
+    let temperature = point.temperature.convert_to_si_unit().value;
     match region {
         Iapws97Region::Region1 | Iapws97Region::Region4 => Ok(gibbs_method(point)),
         Iapws97Region::Region2 => Ok(vapor_method(
@@ -445,16 +445,16 @@ fn interpolate_entry(
     let phase_info_result = LiquidVapor::new(liq_frac, vap_frac)
         .map(|x| PhaseRegion::Composite(CompositePhaseRegion::LiquidVapor(x)))
         .map_err(SteamQueryErr::CompositePhaseRegionErr);
-    let temperature = interpolate_entry_property(|x| x.temperature.into_si_unit().value);
-    let pressure = interpolate_entry_property(|x| x.pressure.into_si_unit().value);
-    let internal_energy = interpolate_entry_property(|x| x.internal_energy.into_si_unit().value);
-    let enthalpy = interpolate_entry_property(|x| x.enthalpy.into_si_unit().value);
-    let entropy = interpolate_entry_property(|x| x.entropy.into_si_unit().value);
-    let cv = interpolate_entry_property(|x| x.cv.into_si_unit().value);
-    let cp = interpolate_entry_property(|x| x.cp.into_si_unit().value);
-    let speed_of_sound = interpolate_entry_property(|x| x.speed_of_sound.into_si_unit().value);
+    let temperature = interpolate_entry_property(|x| x.temperature.convert_to_si_unit().value);
+    let pressure = interpolate_entry_property(|x| x.pressure.convert_to_si_unit().value);
+    let internal_energy = interpolate_entry_property(|x| x.internal_energy.convert_to_si_unit().value);
+    let enthalpy = interpolate_entry_property(|x| x.enthalpy.convert_to_si_unit().value);
+    let entropy = interpolate_entry_property(|x| x.entropy.convert_to_si_unit().value);
+    let cv = interpolate_entry_property(|x| x.cv.convert_to_si_unit().value);
+    let cp = interpolate_entry_property(|x| x.cp.convert_to_si_unit().value);
+    let speed_of_sound = interpolate_entry_property(|x| x.speed_of_sound.convert_to_si_unit().value);
     let specific_volume =
-        1f64 / interpolate_entry_property(|x| 1f64 / x.specific_volume.into_si_unit().value);
+        1f64 / interpolate_entry_property(|x| 1f64 / x.specific_volume.convert_to_si_unit().value);
     phase_info_result.map(|phase_region| PtvEntry {
         temperature: Temperature::K(K::new(temperature)),
         pressure: Pressure::Pa(Pa::new(pressure)),
@@ -531,14 +531,14 @@ pub fn get_steam_table_entry(query: SteamQuery) -> Result<PtvEntry, SteamQueryEr
             SteamQuery::EntropyP {
                 pressure: p,
                 entropy: e,
-            } => iterate_pt_entry_solution(p.into_si_unit(), e.into_si_unit().value, |point| {
-                point.entropy.into_si_unit().value
+            } => iterate_pt_entry_solution(p.convert_to_si_unit(), e.convert_to_si_unit().value, |point| {
+                point.entropy.convert_to_si_unit().value
             }),
             SteamQuery::EnthalpyP {
                 pressure: p,
                 enthalpy: e,
-            } => iterate_pt_entry_solution(p.into_si_unit(), e.into_si_unit().value, |point| {
-                point.enthalpy.into_si_unit().value
+            } => iterate_pt_entry_solution(p.convert_to_si_unit(), e.convert_to_si_unit().value, |point| {
+                point.enthalpy.convert_to_si_unit().value
             }),
         })
 }

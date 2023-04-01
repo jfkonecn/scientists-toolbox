@@ -199,8 +199,16 @@ fn create_entry_from_region_point(
     specific_region_point: SpecificRegionPoint,
     phase_region: PhaseRegion,
 ) -> PtvEntry {
-    let temperature = specific_region_point.point.temperature.convert_to_si_unit().value;
-    let pressure = specific_region_point.point.pressure.convert_to_si_unit().value;
+    let temperature = specific_region_point
+        .point
+        .temperature
+        .convert_to_si_unit()
+        .value;
+    let pressure = specific_region_point
+        .point
+        .pressure
+        .convert_to_si_unit()
+        .value;
     let pi = specific_region_point.pi;
     let tau = specific_region_point.tau;
     let gamma = specific_region_point.gamma;
@@ -447,12 +455,14 @@ fn interpolate_entry(
         .map_err(SteamQueryErr::CompositePhaseRegionErr);
     let temperature = interpolate_entry_property(|x| x.temperature.convert_to_si_unit().value);
     let pressure = interpolate_entry_property(|x| x.pressure.convert_to_si_unit().value);
-    let internal_energy = interpolate_entry_property(|x| x.internal_energy.convert_to_si_unit().value);
+    let internal_energy =
+        interpolate_entry_property(|x| x.internal_energy.convert_to_si_unit().value);
     let enthalpy = interpolate_entry_property(|x| x.enthalpy.convert_to_si_unit().value);
     let entropy = interpolate_entry_property(|x| x.entropy.convert_to_si_unit().value);
     let cv = interpolate_entry_property(|x| x.cv.convert_to_si_unit().value);
     let cp = interpolate_entry_property(|x| x.cp.convert_to_si_unit().value);
-    let speed_of_sound = interpolate_entry_property(|x| x.speed_of_sound.convert_to_si_unit().value);
+    let speed_of_sound =
+        interpolate_entry_property(|x| x.speed_of_sound.convert_to_si_unit().value);
     let specific_volume =
         1f64 / interpolate_entry_property(|x| 1f64 / x.specific_volume.convert_to_si_unit().value);
     phase_info_result.map(|phase_region| PtvEntry {
@@ -531,15 +541,19 @@ pub fn get_steam_table_entry(query: SteamQuery) -> Result<PtvEntry, SteamQueryEr
             SteamQuery::EntropyP {
                 pressure: p,
                 entropy: e,
-            } => iterate_pt_entry_solution(p.convert_to_si_unit(), e.convert_to_si_unit().value, |point| {
-                point.entropy.convert_to_si_unit().value
-            }),
+            } => iterate_pt_entry_solution(
+                p.convert_to_si_unit(),
+                e.convert_to_si_unit().value,
+                |point| point.entropy.convert_to_si_unit().value,
+            ),
             SteamQuery::EnthalpyP {
                 pressure: p,
                 enthalpy: e,
-            } => iterate_pt_entry_solution(p.convert_to_si_unit(), e.convert_to_si_unit().value, |point| {
-                point.enthalpy.convert_to_si_unit().value
-            }),
+            } => iterate_pt_entry_solution(
+                p.convert_to_si_unit(),
+                e.convert_to_si_unit().value,
+                |point| point.enthalpy.convert_to_si_unit().value,
+            ),
         })
 }
 

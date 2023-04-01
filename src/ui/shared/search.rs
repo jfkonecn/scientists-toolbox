@@ -31,7 +31,7 @@ fn create_link_configs() -> Vec<SearchableGroup> {
         tags: vec![],
         label: "Thermodynamics".to_owned(),
         configs: ThermoRoute::iter()
-            .map(|route| {
+            .filter_map(|route| {
                 let opt = match route {
                     ThermoRoute::SteamTable => Some(("Steam Table".to_owned(), vec![])),
                     ThermoRoute::NotFound => None,
@@ -46,7 +46,6 @@ fn create_link_configs() -> Vec<SearchableGroup> {
                     None
                 }
             })
-            .flatten()
             .collect::<Vec<SearchableLinkConfig>>(),
     };
 
@@ -54,7 +53,7 @@ fn create_link_configs() -> Vec<SearchableGroup> {
         tags: vec![],
         label: "Fluids".to_owned(),
         configs: FluidsRoute::iter()
-            .map(|route| {
+            .filter_map(|route| {
                 let opt = match route {
                     FluidsRoute::OrificePlate => Some(("Orifice Plate".to_owned(), vec![])),
                     FluidsRoute::NotFound => None,
@@ -69,12 +68,11 @@ fn create_link_configs() -> Vec<SearchableGroup> {
                     None
                 }
             })
-            .flatten()
             .collect::<Vec<SearchableLinkConfig>>(),
     };
     vec![fluids_routes, thermo_routes]
         .iter()
-        .filter(|x| x.configs.len() > 0)
+        .filter(|x| !x.configs.is_empty())
         .map(|x| (*x).clone())
         .collect::<Vec<SearchableGroup>>()
 }
@@ -97,7 +95,7 @@ fn search_link_result<T: Routable + 'static>(
             "justify-center", "content-center",
             "flex", "flex-col"
         )}
-        to={to.clone()}
+        to={to}
         >
         <div class={classes!("p-3")}>
             {label}
@@ -181,7 +179,7 @@ pub fn search() -> Html {
     });
     let configs = {
         let search_opt = (*search_opt).clone().and_then(|x| {
-            if x.len() > 0 {
+            if !x.is_empty() {
                 Some(x.to_lowercase())
             } else {
                 None
@@ -191,7 +189,7 @@ pub fn search() -> Html {
         if let Some(keyword) = search_opt {
             configs
                 .iter()
-                .map(|group| {
+                .filter_map(|group| {
                     if group.label.to_lowercase().contains(&keyword)
                         || group
                             .tags
@@ -210,9 +208,9 @@ pub fn search() -> Html {
                                         .iter()
                                         .any(|x| x.to_lowercase().contains(&keyword))
                             })
-                            .map(|x| x.clone())
+                            .cloned()
                             .collect::<Vec<SearchableLinkConfig>>();
-                        if sub_configs.len() > 0 {
+                        if !sub_configs.is_empty() {
                             Some(SearchableGroup {
                                 label: group.label.clone(),
                                 configs: sub_configs,
@@ -223,7 +221,6 @@ pub fn search() -> Html {
                         }
                     }
                 })
-                .flatten()
                 .collect::<Vec<SearchableGroup>>()
         } else {
             configs

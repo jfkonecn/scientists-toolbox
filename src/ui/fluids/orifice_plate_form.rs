@@ -27,14 +27,14 @@ impl TryFrom<String> for UiOrificePlateQuery {
     fn try_from(value: String) -> Result<Self, Self::Error> {
         match value.as_str() {
             "FlowRate" => Ok(UiOrificePlateQuery::FlowRate),
-            _ => Err(format!("Unknown Query \"{}\"", value).to_owned()),
+            _ => Err(format!("Unknown Query \"{}\"", value)),
         }
     }
 }
 
-impl Into<String> for UiOrificePlateQuery {
-    fn into(self) -> String {
-        match self {
+impl From<UiOrificePlateQuery> for String {
+    fn from(val: UiOrificePlateQuery) -> Self {
+        match val {
             UiOrificePlateQuery::FlowRate => "FlowRate".to_owned(),
         }
     }
@@ -109,12 +109,12 @@ fn orifice_plate_input(OrificePlateInputProps { onchange }: &OrificePlateInputPr
     };
 
     {
-        let query_type_opt = *query_type_opt.clone();
-        let pipe_area_opt = *pipe_area_opt.clone();
-        let orifice_area_opt = *orifice_area_opt.clone();
-        let pressure_drop_opt = *pressure_drop_opt.clone();
-        let density_opt = *density_opt.clone();
-        let discharge_coefficient_opt = *discharge_coefficient_opt.clone();
+        let query_type_opt = *query_type_opt;
+        let pipe_area_opt = *pipe_area_opt;
+        let orifice_area_opt = *orifice_area_opt;
+        let pressure_drop_opt = *pressure_drop_opt;
+        let density_opt = *density_opt;
+        let discharge_coefficient_opt = *discharge_coefficient_opt;
         let onchange = onchange.clone();
 
         use_effect(move || {

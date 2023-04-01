@@ -28,14 +28,14 @@ impl TryFrom<String> for SteamNonCriticalPhaseRegion {
         match value.as_str() {
             "Vapor" => Ok(SteamNonCriticalPhaseRegion::Vapor),
             "Liquid" => Ok(SteamNonCriticalPhaseRegion::Liquid),
-            _ => Err(format!("Unknown Phase \"{}\"", value).to_owned()),
+            _ => Err(format!("Unknown Phase \"{}\"", value)),
         }
     }
 }
 
-impl Into<String> for SteamNonCriticalPhaseRegion {
-    fn into(self) -> String {
-        match self {
+impl From<SteamNonCriticalPhaseRegion> for String {
+    fn from(val: SteamNonCriticalPhaseRegion) -> Self {
+        match val {
             SteamNonCriticalPhaseRegion::Vapor => "Vapor".to_owned(),
             SteamNonCriticalPhaseRegion::Liquid => "Liquid".to_owned(),
         }
@@ -71,13 +71,13 @@ pub enum SatQuery {
 
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub enum SteamQuery {
-    PtQuery(PtPoint),
-    SatQuery(SatQuery),
-    EntropyPQuery {
+    Pt(PtPoint),
+    Sat(SatQuery),
+    EntropyP {
         entropy: EnergyPerMassTemperature,
         pressure: Pressure,
     },
-    EnthalpyPQuery {
+    EnthalpyP {
         enthalpy: EnergyPerMass,
         pressure: Pressure,
     },

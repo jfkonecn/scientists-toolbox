@@ -26,11 +26,10 @@ pub fn number_input(
             *number_value_ref.borrow_mut() = value_opt;
             value_opt
         } else {
-            (*number_value_ref.borrow()).clone()
+            *number_value_ref.borrow()
         }
     });
     let on_number_input = {
-        let oninput = oninput.clone();
         Callback::from(move |e: InputEvent| {
             let target: Option<EventTarget> = e.target();
             let input = target.and_then(|t| t.dyn_into::<HtmlInputElement>().ok());

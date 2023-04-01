@@ -34,7 +34,7 @@ pub fn unit_input<T: Unit + PartialEq + TryFrom<RawUnit> + Into<RawUnit> + 'stat
                     *unit_value_ref.borrow_mut() = value_opt;
                     value_opt
                 } else {
-                    (*unit_value_ref.borrow()).clone()
+                    *unit_value_ref.borrow()
                 }
             };
 
@@ -79,7 +79,6 @@ pub fn unit_input<T: Unit + PartialEq + TryFrom<RawUnit> + Into<RawUnit> + 'stat
         })
     };
     let on_unit_change = {
-        let oninput = oninput.clone();
         Callback::from(move |e: Event| {
             let target: Option<EventTarget> = e.target();
             let input = target.and_then(|t| t.dyn_into::<HtmlSelectElement>().ok());

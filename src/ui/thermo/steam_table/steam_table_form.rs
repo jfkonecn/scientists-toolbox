@@ -138,11 +138,11 @@ fn ptv_entry_output(PtvEntryOutputProps { entry_opt }: &PtvEntryOutputProps) -> 
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 enum UiSteamQuery {
-    PtQuery,
-    SatTQuery,
-    SatPQuery,
-    EntropyPQuery,
-    EnthalpyPQuery,
+    Pt,
+    SatT,
+    SatP,
+    EntropyP,
+    EnthalpyP,
 }
 
 impl TryFrom<String> for UiSteamQuery {
@@ -150,24 +150,24 @@ impl TryFrom<String> for UiSteamQuery {
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         match value.as_str() {
-            "PtQuery" => Ok(UiSteamQuery::PtQuery),
-            "SatPQuery" => Ok(UiSteamQuery::SatPQuery),
-            "SatTQuery" => Ok(UiSteamQuery::SatTQuery),
-            "EntropyPQuery" => Ok(UiSteamQuery::EntropyPQuery),
-            "EnthalpyPQuery" => Ok(UiSteamQuery::EnthalpyPQuery),
-            _ => Err(format!("Unknown Query \"{}\"", value).to_owned()),
+            "PtQuery" => Ok(UiSteamQuery::Pt),
+            "SatPQuery" => Ok(UiSteamQuery::SatP),
+            "SatTQuery" => Ok(UiSteamQuery::SatT),
+            "EntropyPQuery" => Ok(UiSteamQuery::EntropyP),
+            "EnthalpyPQuery" => Ok(UiSteamQuery::EnthalpyP),
+            _ => Err(format!("Unknown Query \"{}\"", value)),
         }
     }
 }
 
-impl Into<String> for UiSteamQuery {
-    fn into(self) -> String {
-        match self {
-            UiSteamQuery::PtQuery => "PtQuery".to_owned(),
-            UiSteamQuery::SatPQuery => "SatPQuery".to_owned(),
-            UiSteamQuery::SatTQuery => "SatTQuery".to_owned(),
-            UiSteamQuery::EntropyPQuery => "EntropyPQuery".to_owned(),
-            UiSteamQuery::EnthalpyPQuery => "EnthalpyPQuery".to_owned(),
+impl From<UiSteamQuery> for String {
+    fn from(val: UiSteamQuery) -> Self {
+        match val {
+            UiSteamQuery::Pt => "PtQuery".to_owned(),
+            UiSteamQuery::SatP => "SatPQuery".to_owned(),
+            UiSteamQuery::SatT => "SatTQuery".to_owned(),
+            UiSteamQuery::EntropyP => "EntropyPQuery".to_owned(),
+            UiSteamQuery::EnthalpyP => "EnthalpyPQuery".to_owned(),
         }
     }
 }
@@ -178,11 +178,11 @@ impl Display for UiSteamQuery {
             f,
             "{}",
             match self {
-                UiSteamQuery::PtQuery => "Pressure Temperature",
-                UiSteamQuery::EnthalpyPQuery => "Enthalpy and Pressure",
-                UiSteamQuery::EntropyPQuery => "Entropy and Pressure",
-                UiSteamQuery::SatTQuery => "Saturated Temperature Steam",
-                UiSteamQuery::SatPQuery => "Saturated Pressure Steam",
+                UiSteamQuery::Pt => "Pressure Temperature",
+                UiSteamQuery::EnthalpyP => "Enthalpy and Pressure",
+                UiSteamQuery::EntropyP => "Entropy and Pressure",
+                UiSteamQuery::SatT => "Saturated Temperature Steam",
+                UiSteamQuery::SatP => "Saturated Pressure Steam",
             }
         )
     }
@@ -196,7 +196,7 @@ struct SteamTableInputProps {
 
 #[function_component(SteamTableInput)]
 fn steam_table_input(SteamTableInputProps { onchange }: &SteamTableInputProps) -> Html {
-    let query_type_opt = use_state(|| -> Option<UiSteamQuery> { Some(UiSteamQuery::PtQuery) });
+    let query_type_opt = use_state(|| -> Option<UiSteamQuery> { Some(UiSteamQuery::Pt) });
     let on_query_type_change = {
         let query_type_opt = query_type_opt.clone();
         Callback::from(move |val| {
@@ -247,45 +247,45 @@ fn steam_table_input(SteamTableInputProps { onchange }: &SteamTableInputProps) -
     };
 
     {
-        let query_type_opt = *query_type_opt.clone();
-        let pressure_opt = *pressure_opt.clone();
-        let temperature_opt = *temperature_opt.clone();
-        let entropy_opt = *entropy_opt.clone();
-        let enthalpy_opt = *enthalpy_opt.clone();
-        let phase_region_opt = *phase_region_opt.clone();
+        let query_type_opt = *query_type_opt;
+        let pressure_opt = *pressure_opt;
+        let temperature_opt = *temperature_opt;
+        let entropy_opt = *entropy_opt;
+        let enthalpy_opt = *enthalpy_opt;
+        let phase_region_opt = *phase_region_opt;
         let onchange = onchange.clone();
         use_effect(move || {
             let query_opt = match query_type_opt {
-                Some(UiSteamQuery::PtQuery) => match (pressure_opt, temperature_opt) {
-                    (Some(p), Some(t)) => Some(SteamQuery::PtQuery(PtPoint {
+                Some(UiSteamQuery::Pt) => match (pressure_opt, temperature_opt) {
+                    (Some(p), Some(t)) => Some(SteamQuery::Pt(PtPoint {
                         pressure: p,
                         temperature: t,
                     })),
                     _ => None,
                 },
-                Some(UiSteamQuery::SatPQuery) => match (phase_region_opt, pressure_opt) {
-                    (Some(r), Some(p)) => Some(SteamQuery::SatQuery(SatQuery::SatPQuery {
+                Some(UiSteamQuery::SatP) => match (phase_region_opt, pressure_opt) {
+                    (Some(r), Some(p)) => Some(SteamQuery::Sat(SatQuery::SatPQuery {
                         pressure: p,
                         phase_region: r,
                     })),
                     _ => None,
                 },
-                Some(UiSteamQuery::SatTQuery) => match (phase_region_opt, temperature_opt) {
-                    (Some(r), Some(t)) => Some(SteamQuery::SatQuery(SatQuery::SatTQuery {
+                Some(UiSteamQuery::SatT) => match (phase_region_opt, temperature_opt) {
+                    (Some(r), Some(t)) => Some(SteamQuery::Sat(SatQuery::SatTQuery {
                         temperature: t,
                         phase_region: r,
                     })),
                     _ => None,
                 },
-                Some(UiSteamQuery::EnthalpyPQuery) => match (enthalpy_opt, pressure_opt) {
-                    (Some(e), Some(p)) => Some(SteamQuery::EnthalpyPQuery {
+                Some(UiSteamQuery::EnthalpyP) => match (enthalpy_opt, pressure_opt) {
+                    (Some(e), Some(p)) => Some(SteamQuery::EnthalpyP {
                         enthalpy: e,
                         pressure: p,
                     }),
                     _ => None,
                 },
-                Some(UiSteamQuery::EntropyPQuery) => match (entropy_opt, pressure_opt) {
-                    (Some(e), Some(p)) => Some(SteamQuery::EntropyPQuery {
+                Some(UiSteamQuery::EntropyP) => match (entropy_opt, pressure_opt) {
+                    (Some(e), Some(p)) => Some(SteamQuery::EntropyP {
                         entropy: e,
                         pressure: p,
                     }),
@@ -306,24 +306,24 @@ fn steam_table_input(SteamTableInputProps { onchange }: &SteamTableInputProps) -
             onchange={on_query_type_change}
             value={*query_type_opt}
             options={vec![
-                UiSteamQuery::PtQuery,
-                UiSteamQuery::EnthalpyPQuery,
-                UiSteamQuery::EntropyPQuery,
-                UiSteamQuery::SatTQuery,
-                UiSteamQuery::SatPQuery,
+                UiSteamQuery::Pt,
+                UiSteamQuery::EnthalpyP,
+                UiSteamQuery::EntropyP,
+                UiSteamQuery::SatT,
+                UiSteamQuery::SatP,
                 ]}
         />
         {
         match *query_type_opt {
-            Some(UiSteamQuery::PtQuery)
-            | Some(UiSteamQuery::SatPQuery)
-            | Some(UiSteamQuery::EnthalpyPQuery)
-            | Some(UiSteamQuery::EntropyPQuery) => {
+            Some(UiSteamQuery::Pt)
+            | Some(UiSteamQuery::SatP)
+            | Some(UiSteamQuery::EnthalpyP)
+            | Some(UiSteamQuery::EntropyP) => {
                     html! {
         <UnitInput<Pressure> id={"pressure"} label={"Pressure"} onchange={on_pressure_change} />
                     }
             },
-            Some(UiSteamQuery::SatTQuery)
+            Some(UiSteamQuery::SatT)
             | None => {
                     html! {
                         <></>
@@ -333,16 +333,16 @@ fn steam_table_input(SteamTableInputProps { onchange }: &SteamTableInputProps) -
         }
         {
         match *query_type_opt {
-            Some(UiSteamQuery::PtQuery)
-            | Some(UiSteamQuery::SatTQuery)
+            Some(UiSteamQuery::Pt)
+            | Some(UiSteamQuery::SatT)
              => {
                     html! {
         <UnitInput<Temperature> id={"temperature"} label={"Temperature"} onchange={on_temperature_change}/>
                     }
             },
-            Some(UiSteamQuery::SatPQuery)
-            | Some(UiSteamQuery::EnthalpyPQuery)
-            | Some(UiSteamQuery::EntropyPQuery)
+            Some(UiSteamQuery::SatP)
+            | Some(UiSteamQuery::EnthalpyP)
+            | Some(UiSteamQuery::EntropyP)
             | None => {
                     html! {
                         <></>
@@ -352,16 +352,16 @@ fn steam_table_input(SteamTableInputProps { onchange }: &SteamTableInputProps) -
         }
         {
         match *query_type_opt {
-            Some(UiSteamQuery::EnthalpyPQuery)
+            Some(UiSteamQuery::EnthalpyP)
              => {
                     html! {
         <UnitInput<EnergyPerMass> id={"enthalpy"} label={"Enthalpy"} onchange={on_enthalpy_change}/>
                     }
             },
-            Some(UiSteamQuery::SatPQuery)
-            | Some(UiSteamQuery::SatTQuery)
-            | Some(UiSteamQuery::PtQuery)
-            | Some(UiSteamQuery::EntropyPQuery)
+            Some(UiSteamQuery::SatP)
+            | Some(UiSteamQuery::SatT)
+            | Some(UiSteamQuery::Pt)
+            | Some(UiSteamQuery::EntropyP)
             | None => {
                     html! {
                         <></>
@@ -371,16 +371,16 @@ fn steam_table_input(SteamTableInputProps { onchange }: &SteamTableInputProps) -
         }
         {
         match *query_type_opt {
-            Some(UiSteamQuery::EntropyPQuery)
+            Some(UiSteamQuery::EntropyP)
              => {
                     html! {
         <UnitInput<EnergyPerMassTemperature> id={"entropy"} label={"Entropy"} onchange={on_entropy_change}/>
                     }
             },
-            Some(UiSteamQuery::SatPQuery)
-            | Some(UiSteamQuery::SatTQuery)
-            | Some(UiSteamQuery::PtQuery)
-            | Some(UiSteamQuery::EnthalpyPQuery)
+            Some(UiSteamQuery::SatP)
+            | Some(UiSteamQuery::SatT)
+            | Some(UiSteamQuery::Pt)
+            | Some(UiSteamQuery::EnthalpyP)
             | None => {
                     html! {
                         <></>
@@ -390,8 +390,8 @@ fn steam_table_input(SteamTableInputProps { onchange }: &SteamTableInputProps) -
         }
         {
         match *query_type_opt {
-            Some(UiSteamQuery::SatPQuery)
-            | Some(UiSteamQuery::SatTQuery)
+            Some(UiSteamQuery::SatP)
+            | Some(UiSteamQuery::SatT)
              => {
                     html! {
         <SelectInput<SteamNonCriticalPhaseRegion>
@@ -406,9 +406,9 @@ fn steam_table_input(SteamTableInputProps { onchange }: &SteamTableInputProps) -
         />
                     }
             },
-            Some(UiSteamQuery::EntropyPQuery)
-            | Some(UiSteamQuery::PtQuery)
-            | Some(UiSteamQuery::EnthalpyPQuery)
+            Some(UiSteamQuery::EntropyP)
+            | Some(UiSteamQuery::Pt)
+            | Some(UiSteamQuery::EnthalpyP)
             | None => {
                     html! {
                         <></>

@@ -8,6 +8,16 @@ install_crate = "rustfmt"
 command = "cargo"
 args = ["fmt", "--all", "--", "--check"]
 
+[tasks.clippy]
+install_crate = "clippy"
+command = "cargo"
+args = ["clippy", "--fix"]
+
+[tasks.check-clippy]
+install_crate = "clippy"
+command = "cargo"
+args = ["clippy", "--all-targets", "--all-features", "--", "-D", "warnings"]
+
 [tasks.post-build]
 command = "npm"
 args = ["run", "post-build"]
@@ -60,14 +70,15 @@ args = ["test", "--release"]
 
 [tasks.watch]
 run_task = { name = [
-    "watch-serve-dev", 
-    "watch-tailwind-dev", 
+    "watch-serve-dev",
+    "watch-tailwind-dev",
     "watch-post-build"
     ], parallel = true }
 
 [tasks.dev]
 dependencies = [
     "format",
+    "clippy",
     "tailwind-dev",
     "app-build-dev",
     "post-build",
@@ -77,6 +88,7 @@ dependencies = [
 [tasks.release]
 dependencies = [
     "check-format",
+    "check-clippy",
     "tailwind-release",
     "app-build-release",
     "post-build",

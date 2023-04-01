@@ -147,7 +147,7 @@ pub fn modal(
                 </div>
             </form>
             },
-            modal_host.into(),
+            modal_host,
         )
     } else {
         html! {

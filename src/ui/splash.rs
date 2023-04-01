@@ -1,3 +1,4 @@
+#![allow(clippy::let_unit_value, unused_variables)]
 use super::shared::search::*;
 use web_sys::FocusEvent;
 use yew::{classes, function_component, html};

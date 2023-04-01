@@ -1,3 +1,4 @@
+#![allow(clippy::let_unit_value, unused_variables)]
 use super::assets::svg::*;
 use super::fluids::orifice_plate_form::OrificePlateForm;
 use super::logo::*;
@@ -52,7 +53,7 @@ fn not_found() -> Html {
 fn switch_thermo(route: &ThermoRoute) -> Html {
     match route {
         ThermoRoute::SteamTable => html! {
-            <SteamTableForm />
+            <SteamTableForm/>
         },
         ThermoRoute::NotFound => html! {
             <NotFound/>

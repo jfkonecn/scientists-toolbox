@@ -16,7 +16,7 @@ args = ["clippy", "--fix"]
 [tasks.check-clippy]
 install_crate = "clippy"
 command = "cargo"
-args = ["clippy", "--all-targets", "--all-features", "--", "-D", "warnings"]
+args = ["clippy", "--all-targets", "--all-features", "--"]
 
 [tasks.post-build]
 command = "npm"

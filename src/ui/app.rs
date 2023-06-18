@@ -146,7 +146,7 @@ fn app_shell(AppShellProps { children }: &AppShellProps) -> Html {
                 </nav>
             </header>
             <main class={classes!("bg-white",
-            "min-h-[calc(100vh-theme(spacing.28)-theme(spacing.20))]",
+            "min-h-[calc(100vh-theme(spacing.32)-theme(spacing.20))]",
             "w-full","flex", "items-start", "justify-center",
            )}>
             <div class={classes!("max-w-5xl", "w-screen")}>

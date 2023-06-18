@@ -111,10 +111,9 @@ fn app_shell(AppShellProps { children }: &AppShellProps) -> Html {
         };
     html! {
         <div class={classes!("flex", "items-center", "justify-center", "flex-col", "w-full", "bg-gray-100")}>
-            <header class={classes!("bg-sky-100","h-32", "w-full",
-                    "grid", "justify-center")}>
-                <nav class={classes!("max-w-5xl", "w-screen", "px-10",
-                "flex", "items-center", "justify-center", )}>
+            <header class={classes!("bg-sky-100", "w-full")}>
+                <nav class={classes!("max-w-5xl", "w-full", "px-10", "h-32",
+                "flex", "items-center", "space", "justify-between", "mx-auto")}>
                     <ul class={classes!("flex", "items-center", "h-full")}>
                         <li class="w-20">
                             <Link<MainRoute> classes={classes!("hover:underline")} to={MainRoute::Home}>
@@ -122,7 +121,6 @@ fn app_shell(AppShellProps { children }: &AppShellProps) -> Html {
                             </Link<MainRoute>>
                         </li>
                     </ul>
-                    <div class={classes!("flex-grow")}></div>
                     <ul class={classes!("flex", "items-center", "gap-6", "h-full")}>
                         {
                             if show_search_on_nav_bar {
